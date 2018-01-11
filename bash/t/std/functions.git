@@ -4,7 +4,9 @@
 
 T_REPO=https://github.com/opsgang/libs
 L_REPO=/var/tmp/repo.src
- 
+_USER="boo"
+_EMAIL="boo@boo.com"
+
 setup() {
     i "... setting up for tests"
     rm -rf $L_REPO 2>/dev/null
@@ -22,19 +24,195 @@ repo_for_test() {
     (cd $repo; git reset --hard >/dev/null)
 }
 
-### check_for_changes
-t_check_for_changes() {
-    SUITE="check_for_changes()"
-    run_t success_if_no_local_changes
-    run_t skip_local_check_if_devmode
-    run_t error_if_existing_file_changed
-    run_t no_error_if_file_added
+# ... use this for tests that want a repo where the head commit is
+# definitely not tagged.
+new_commit() {
+    git config user.name $_USER
+    git config user.email $_EMAIL
+    echo new_commit >>README.md
+    git checkout master
+    git commit -am 'fake; will not push'
 }
 
-### sha_in_origin
-t_sha_in_origin() {
-    SUITE="sha_in_origin()"
-    run_t success_if_commit_in_origin
+new_tag() {
+    git tag -a 'new-tag' -m 'bah'
+}
+
+### git_vars()
+t_git_vars() {
+    SUITE="git_vars()"
+    run_t git_vars_on_master
+    run_t git_vars_checked_out_branch_with_tag
+    run_t git_vars_checked_out_detached_head_tag
+}
+### git_info_vars()
+t_git_info_vars() {
+    SUITE="git_info_vars()"
+    run_t GIT_INFO_is_sanitised
+}
+
+#### in_git_clone()
+#t_is_git_clone() {
+#    SUITE="is_git_clone()"
+#    run_t success_if_git_cloned
+#    run_t default_check_pwd_is_clone_if_no_arg
+#    run_t error_if_git_clone_dir_not_exist
+#}
+#
+#### check_for_changes
+#t_check_for_changes() {
+#    SUITE="check_for_changes()"
+#    run_t success_if_no_local_changes
+#    run_t skip_local_check_if_devmode
+#    run_t error_if_existing_file_changed
+#    run_t no_error_if_file_added
+#}
+#
+#### sha_in_origin
+#t_sha_in_origin() {
+#    SUITE="sha_in_origin()"
+#    run_t success_if_commit_in_origin
+#    run_t use_GIT_SHA_if_no_arg
+#    run_t use_current_sha_if_no_arg_or_GIT_SHA
+#}
+
+t_git_vars_on_master() {
+    local rc=0
+    local repo=/var/tmp/repo_${FUNCNAME[0]}
+    local u="$_USER" e="$_EMAIL"
+    local patt="^<master><$T_REPO><\w{$GIT_SHA_LEN}><NO_GIT_TAG><$u><$e><$u $e>$"
+    repo_for_test $repo
+
+    (
+        cd $repo
+        ! new_commit >/dev/null 2>&1 && e "could not create new commit" && exit 1
+
+        git_vars
+
+        str="<$GIT_BRANCH><$GIT_REPO><$GIT_SHA><$GIT_TAG><$GIT_USER><$GIT_EMAIL><$GIT_ID>"
+        echo "$str" | grep -P "$patt" >/dev/null
+    ) || rc=1
+
+    rm -rf $repo
+    return $rc
+}
+
+t_git_vars_checked_out_branch_with_tag() {
+    local rc=0
+    local repo=/var/tmp/repo_${FUNCNAME[0]}
+    repo_for_test $repo
+
+    (
+        cd $repo
+        ! new_commit >/dev/null 2>&1 && e "could not create new commit" && exit 1
+        ! new_tag >/dev/null 2>&1 && e "could not create new tag" && exit 1
+
+        git_vars
+        [[ "<$GIT_BRANCH><$GIT_TAG>" == "<master><new-tag>" ]] || exit 1
+
+    ) || rc=1
+
+    rm -rf $repo
+    return $rc
+}
+
+t_git_vars_checked_out_detached_head_tag() {
+    local rc=0
+    local repo=/var/tmp/repo_${FUNCNAME[0]}
+    local patt=".*"
+    local u="$_USER" e="$_EMAIL"
+    local patt="^<from-a-tag><$T_REPO><\w{$GIT_SHA_LEN}><new-tag><$u><$e><$u $e>$"
+    repo_for_test $repo
+
+    (
+        cd $repo
+        ! new_tag >/dev/null 2>&1 && e "could not create new tag" && exit 1
+        ! new_commit >/dev/null 2>&1 && e "could not create new commit" && exit 1
+        git checkout new-tag >/dev/null 2>&1
+
+        git_vars
+
+        str="<$GIT_BRANCH><$GIT_REPO><$GIT_SHA><$GIT_TAG><$GIT_USER><$GIT_EMAIL><$GIT_ID>"
+        echo "$str" | grep -P "$patt" >/dev/null
+    ) || rc=1
+
+    rm -rf $repo
+    return $rc
+}
+
+t_GIT_INFO_is_sanitised() {
+    local exp='repo:https://user:pword@blah:8080/ sha1:____________>-+=<____ tag:1.3.9 branch:foo'
+
+    (
+        GIT_REPO="https://user:pword@blah:8080/"
+        GIT_SHA='!"£$%^&*()_>-+=<`\\|'
+        GIT_TAG=1.3.9
+        GIT_BRANCH=foo
+        git_info_vars
+        [[ "$GIT_INFO" == "$exp" ]] || exit 1
+    )
+}
+
+t_success_if_git_cloned() {
+    local rc=0
+    local repo=/var/tmp/repo_${FUNCNAME[0]}
+    repo_for_test $repo
+    is_git_clone $repo/bash || rc=1
+    rm -rf $repo
+    return $rc
+}
+
+t_error_if_git_clone_dir_not_exist() {
+    is_git_clone /foo/bar 2>&1 | grep 'could not cd to /foo/bar' >/dev/null
+}
+
+t_default_check_pwd_is_clone_if_no_arg() {
+    local rc=0
+    local repo=/var/tmp/repo_${FUNCNAME[0]}
+    repo_for_test $repo
+
+    (
+        cd $repo
+        is_git_clone || exit 1
+    ) || rc=1
+
+    rm -rf $repo
+    return $rc
+}
+
+t_skip_origin_check_if_devmode() {
+    local rc=0
+    local repo=/var/tmp/repo_${FUNCNAME[0]}
+    repo_for_test $repo
+
+    (
+        lrc=0
+        cd $repo
+        local o=$(DEVMODE=true sha_in_origin 2>&1) || lrc=1
+        echo "$o" | grep -P 'DEVMODE.* - skipping' >/dev/null || lrc=1
+        exit $lrc
+    ) || rc=1
+
+    rm -rf $repo
+    return $rc
+}
+
+t_use_current_sha_if_no_arg_or_GIT_SHA() {
+    local rc=0
+    local repo=/var/tmp/repo_${FUNCNAME[0]}
+    repo_for_test $repo
+
+    (
+        cd $repo
+        local o=$(sha_in_origin)
+        echo "$o" \
+        | grep -P "checking git sha ${HEAD_SHA:0:$GIT_SHA_LEN} exists in origin" >/dev/null \
+        || exit 1
+
+    ) || rc=1
+
+    rm -rf $repo
+    return $rc
 }
 
 t_success_if_commit_in_origin() {
@@ -44,8 +222,23 @@ t_success_if_commit_in_origin() {
 
     (
         cd $repo
-        sha_in_origin $HEAD_SHA || rc=1
-    )
+        sha_in_origin $SECOND_SHA >/dev/null 2>&1 || exit 1
+    ) ||  rc=1
+
+    rm -rf $repo
+    return $rc
+}
+
+t_use_GIT_SHA_if_no_arg() {
+    local rc=0
+    local repo=/var/tmp/repo_${FUNCNAME[0]}
+    repo_for_test $repo
+
+    (
+        cd $repo
+        local o=$(GIT_SHA="blahblahblah" sha_in_origin 2>&1)
+        echo "$o" | grep -P 'commit \(blahblahblah\) does not exist on origin\.' >/dev/null || exit 1
+    ) || rc=1
 
     rm -rf $repo
     return $rc
@@ -100,5 +293,5 @@ t_no_error_if_file_added() {
 
 ! . t/functions.t && echo "ERROR $0: could not source functions.t" && exit 1
 source_src_and_deps "std/functions std/functions.log_msgs" || exit 1
-setup || exit 1
+#setup || exit 1
 run_all
