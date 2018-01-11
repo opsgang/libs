@@ -293,5 +293,5 @@ t_no_error_if_file_added() {
 
 ! . t/functions.t && echo "ERROR $0: could not source functions.t" && exit 1
 source_src_and_deps "std/functions std/functions.log_msgs" || exit 1
-#setup || exit 1
+setup || exit 1
 run_all
