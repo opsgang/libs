@@ -1,2 +1,4 @@
+[1]: https://github.com/opsgang/fetch
 # libs
-... reusable scripts - retrieved specific versions with opsgang/fetch :)
+... reusable scripts - retrieve specific versions with [opsgang/fetch][1] :)
+

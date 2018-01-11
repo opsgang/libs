@@ -1,0 +1,61 @@
+# vim: et sr sw=4 ts=4 smartindent syntax=sh:
+run_modes() {
+    if [[ ! -z "$DEBUG" ]]; then
+        i "... forcing VERBOSE as DEBUG on"
+        export VERBOSE="true"
+    fi
+}
+
+source_files() {
+    local files="$*"
+    local f="" rc=0
+
+    for f in $files; do
+        ! . $f && e "... can not source $f" && rc=1
+    done
+
+    return $rc
+}
+
+check_var_defined() {
+    local var_name="$1"
+    local var_val="${!var_name}"
+    if [[ -z $var_val ]]; then
+        return 1
+    else
+        return 0
+    fi
+}
+
+required_vars() {
+    local rc=0
+    local required_vars="$1"
+    local this_var
+    for this_var in $required_vars; do
+        if ! check_var_defined $this_var
+        then
+            e "\$$this_var must be set in env"
+            rc=1
+        fi
+    done
+
+    return $rc
+}
+
+envsubst_tokens_list() {
+    local tmpl_tokens="$1"
+    local list=""
+    for token in $tmpl_tokens; do
+        token="\${$token}"
+        if [[ -z "$list" ]]; then
+            list="$token"
+        else
+            list="$list $token"
+        fi
+    done
+    echo "$list"
+}
+
+random_str() {
+    date +"%Y%m%d%H%m%s-$(( $(shuf -i 1-999999 -n1) * $(shuf -i 1-999999 -n1) ))"
+}

@@ -1,0 +1,103 @@
+#!/bin/bash
+# vim: et sr sw=4 ts=4 smartindent syntax=sh:
+# TESTS git functions
+#
+# DEPENDS on log_msgs functions
+#
+### source_files()
+t_source_files() {
+    SUITE="source_files()"
+    run_t will_error_if_file_can_not_be_sourced
+    run_t can_source_multiple_files
+}
+
+### check_var_defined
+t_check_var_defined() {
+    SUITE="check_var_defined()"
+    run_t non_empty_var_is_success
+    run_t unset_var_is_error
+    run_t empty_var_is_error
+}
+
+### required_vars()
+t_required_vars() {
+    SUITE="required_vars()"
+    run_t success_if_all_vars_defined
+    run_t error_if_any_vars_missing
+}
+
+### envsubst_tokens_list()
+t_envsubst_tokens_list() {
+    SUITE="envsubst_tokens_list"
+    run_t create_list_of_tokens
+}
+
+### random_str()
+# just make sure function exists - can't easily verify randomness!
+t_random_str() {
+    SUITE="random_str()"
+    run_t check_random_str_func_exists
+}
+
+t_create_list_of_tokens() {
+    local tokens="apple banana carrot"
+    local expected='${apple} ${banana} ${carrot}'
+    [[ "$(envsubst_tokens_list "$tokens")" == "$expected" ]]
+}
+
+t_check_random_str_func_exists() {
+    declare -f random_str >/dev/null 2>&1
+}
+
+t_success_if_all_vars_defined() {
+    local my_var1=apple my_var2=banana my_var3=carrot
+    required_vars "my_var1 my_var2 my_var3"
+}
+
+t_error_if_any_vars_missing() {
+    local my_var1=apple my_var2=carrot my_var5="egg-plant"
+    ! required_vars "my_var1 my_var2 my_var3 my_var4 my_var5" 2>/dev/null
+}
+
+t_non_empty_var_is_success() {
+    local my_var="a value"
+    check_var_defined my_var
+}
+
+t_unset_var_is_error() {
+    unset my_var_unset
+    ! check_var_defined my_var_unset
+}
+
+t_empty_var_is_error() {
+    local my_var_empty=""
+    ! check_var_defined my_var_empty
+}
+
+t_can_source_multiple_files() {
+    local rc=0 out=""
+    local f="/var/tmp/t_will_error_if_file_can_not_be_sourced"
+    echo "echo 'foo'">$f.1
+    echo "echo 'bar'">$f.2
+    out=$(source_files $f.1 $f.2 2>&1)
+    echo $out | grep -Po '^foo bar$' >/dev/null || rc=1
+    rm $f.1 $f.2
+    return $rc
+}
+
+t_will_error_if_file_can_not_be_sourced() {
+    local rc=0 out=""
+    local f="/var/tmp/t_will_error_if_file_can_not_be_sourced"
+    echo "echo 'foo'">$f.1
+    echo "echo 'bar'">$f.2
+    out=$(source_files $f.1 $f.2 $f.3 2>&1)
+    echo "$out" | grep -P "... can not source $f.3" >/dev/null || rc=1
+    [[ $out =~ ^foo.bar[^-_a-zA-Z0-9] ]] || rc=1
+    rm $f.1 $f.2
+    return $rc
+}
+
+! . t/functions.t && echo "ERROR $0: could not source functions.t" && exit 1
+source_src_and_deps "std/functions.log_msgs" || exit 1
+run_all
+

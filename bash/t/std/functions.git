@@ -1,0 +1,104 @@
+#!/bin/bash
+# vim: et sr sw=4 ts=4 smartindent syntax=sh:
+# TESTS git
+
+T_REPO=https://github.com/opsgang/libs
+L_REPO=/var/tmp/repo.src
+ 
+setup() {
+    i "... setting up for tests"
+    rm -rf $L_REPO 2>/dev/null
+    git clone --depth 5 --branch master $T_REPO $L_REPO || return 1
+    here=$PWD
+    cd $L_REPO
+    HEAD_SHA=$(git log --format='%H' | head -n 1)
+    SECOND_SHA=$(git log --format='%H' | head -n 2 | tail -n 1)
+    cd $here
+}
+
+repo_for_test() {
+    local repo="$1"
+    rm -rf $repo; cp -R $L_REPO $repo; sleep 1
+    (cd $repo; git reset --hard >/dev/null)
+}
+
+### check_for_changes
+t_check_for_changes() {
+    SUITE="check_for_changes()"
+    run_t success_if_no_local_changes
+    run_t skip_local_check_if_devmode
+    run_t error_if_existing_file_changed
+    run_t no_error_if_file_added
+}
+
+### sha_in_origin
+t_sha_in_origin() {
+    SUITE="sha_in_origin()"
+    run_t success_if_commit_in_origin
+}
+
+t_success_if_commit_in_origin() {
+    local rc=0
+    local repo=/var/tmp/repo_${FUNCNAME[0]}
+    repo_for_test $repo
+
+    (
+        cd $repo
+        sha_in_origin $HEAD_SHA || rc=1
+    )
+
+    rm -rf $repo
+    return $rc
+}
+
+t_success_if_no_local_changes() {
+    local rc=0
+    local repo=/var/tmp/repo_${FUNCNAME[0]}
+    repo_for_test $repo
+
+    check_for_changes $repo >/dev/null || rc=1
+
+    rm -rf $repo
+    return $rc
+}
+
+t_skip_local_check_if_devmode() {
+    local rc=0
+    local repo=/var/tmp/repo_${FUNCNAME[0]}
+    repo_for_test $repo
+
+    local o=$(DEVMODE=true check_for_changes $repo 2>&1) || rc=1
+    echo "$o" | grep -P 'DEVMODE.* - skipping' >/dev/null || rc=1
+
+    rm -rf $repo
+    return $rc
+}
+
+t_error_if_existing_file_changed() {
+    local rc=0
+    local repo=/var/tmp/repo_${FUNCNAME[0]}
+    repo_for_test $repo
+    echo "Deliberately changing file for test" >$repo/README.md
+
+    ! check_for_changes $repo >/dev/null 2>&1 || rc=1
+
+    rm -rf $repo
+    return $rc
+}
+
+t_no_error_if_file_added() {
+    local rc=0
+    local repo=/var/tmp/repo_${FUNCNAME[0]}
+    repo_for_test $repo
+    echo "Deliberately adding file for test" >$repo/this-file-is-new
+
+    check_for_changes $repo >/dev/null || rc=1
+
+    rm -rf $repo
+    return $rc
+}
+
+! . t/functions.t && echo "ERROR $0: could not source functions.t" && exit 1
+source_src_and_deps "std/functions std/functions.log_msgs" || exit 1
+setup || exit 1
+run_all

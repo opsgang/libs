@@ -1,0 +1,84 @@
+#!/bin/bash
+# vim: et sr sw=4 ts=4 smartindent syntax=sh:
+# TESTS log msgs
+#
+EXPECTED_PREFIX="$(basename $0)"
+EXPECTED_DEBUG_PREFIX="$(realpath -- $0)" # horrid, but no better way
+
+### set_log_prefix()
+# set_log_prefix() is intended to be called from i(), e(), d() etc
+# Hence we need to amend which frame of the call stack to use for these
+# tests that do call it directly (by setting FROM_STACKFRAME)
+# so we get the EXPECTED_PREFIX or EXPECTED_DEBUG_PREFIX
+t_set_log_prefix() {
+    SUITE='set_log_prefix()'
+    run_t prefix_when_run_from_script
+    run_t prefix_when_run_in_shell
+    run_t prefix_when_run_from_script_with_debug
+    run_t prefix_when_run_in_subshell
+    run_t prefix_when_run_in_sourced_file
+}
+
+### d()
+t_d() {
+    SUITE='d()'
+    run_t no_output_if_DEBUG_not_set
+    run_t output_if_debug_set
+}
+
+### __stacktrace()
+t___stacktrace() {
+    SUITE='__stacktrace'
+    local patt="^t___stacktrace\(\) \(file: $0, line: \d+\).n..run_t\(\) \(file: [^,]+, line: \d+\).n"
+    local st=$(FROM_STACKFRAME=0 __stacktrace)
+    echo "$st" | grep -P "$patt" >/dev/null
+}
+
+# DEBUG output contains bash terminal codes for colour ...
+t_output_if_debug_set() {
+    echo "$(DEBUG=true d 'should print')" \
+    | grep -Po "^DEBUG $EXPECTED_DEBUG_PREFIX:.*should print" >/dev/null
+}
+
+t_no_output_if_DEBUG_not_set() {
+    [[ "$(unset DEBUG; d 'should not print')" == "" ]]
+}
+
+t_prefix_when_run_in_shell() {
+    [[ $(bash -c ". $SRC && set_log_prefix") == "bash" ]]
+}
+
+t_prefix_when_run_from_script() {
+    # Use FROM_STACKFRAME as we would not usually call set_log_prefix directly, but from a wrapper.
+    local expected="$EXPECTED_PREFIX:t_prefix_when_run_from_script()"
+    [[ "$(FROM_STACKFRAME=0 set_log_prefix)" == "$expected" ]]
+}
+
+t_prefix_when_run_from_script_with_debug() {
+    # Use FROM_STACKFRAME as we would not usually call set_log_prefix directly, but from a wrapper.
+    local expected="$EXPECTED_DEBUG_PREFIX:t_prefix_when_run_from_script_with_debug()"
+    [[ "$(DEBUG=true FROM_STACKFRAME=0 set_log_prefix)" == "$expected" ]]
+}
+
+t_prefix_when_run_in_subshell() {
+    local expected="$EXPECTED_DEBUG_PREFIX:t_prefix_when_run_in_subshell()"
+    (
+        (
+            [[ $(DEBUG=true FROM_STACKFRAME=0 set_log_prefix) == "$expected" ]]
+        )
+    )
+}
+
+t_prefix_when_run_in_sourced_file() {
+    local a=""
+    (
+        # no need to use FROM_STACKFRAME as set_log_prefix called indirectly within a new frame
+        # created by anon file descriptor <()
+        . <(echo -e 'a=$(DEBUG=true set_log_prefix)')
+        [[ "$a" == "$EXPECTED_DEBUG_PREFIX:t_prefix_when_run_in_sourced_file()" ]]
+    )
+}
+
+! . t/functions.t && echo "ERROR $0: could not source functions.t" && exit 1
+source_src_and_deps || exit 1
+run_all
