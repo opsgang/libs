@@ -20,7 +20,8 @@ build:
         for lib in $libs; do
           [[ ! -x "t/$lib" ]] && echo "No executable tests for $lib. Failing" && exit 1;
           t/$lib || rc=1 ;
-      done;
+        done ;
+      done ;
       exit $rc ;
 
 
