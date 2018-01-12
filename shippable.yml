@@ -1,0 +1,55 @@
+# vim: et sr sw=2 ts=2 smartindent:
+language: none
+
+branches:
+  only:
+    - master
+
+env:
+  global:
+    - IMG="aws_env"
+
+build:
+
+  pre_ci_boot:
+    image_name: opsgang/aws_env
+    image_tag: stable
+    pull: true
+
+  ci:
+    - cd bash ;
+      echo "running tests for bash libs" ;
+      rc=0 ;
+      for suite in std; do
+        libs=$(find $suite -type f | grep -v 'README' | grep -vP '\.(md|markdown|txt)$') ;
+        for lib in $libs; do
+          [[ ! -x "t/$lib" ]] && echo "No executable tests for $lib. Failing" && exit 1;
+          t/$lib || rc=1 ;
+      done;
+      exit $rc ;
+
+
+  on_success:
+    - if [[ "$BRANCH" == "master" ]] && [[ "$IS_PULL_REQUEST" != "true" ]]; then
+        echo "... would build some release assets if tagged"
+      fi
+
+integrations:
+  hub:
+    - integrationName: opsgang_dockerhub
+      type: dockerRegistryLogin
+      branches:
+        only:
+          - master
+
+  notifications:
+    - integrationName: opsgang_slack_delivery
+      type: slack
+      recipients: "#delivery"
+      branches:
+        only:
+          - master
+      on_success: always
+      on_failure: always
+      on_pull_request: never
+
