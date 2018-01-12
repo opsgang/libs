@@ -19,15 +19,15 @@ build:
       for suite in std; do
         libs=$(find $suite -type f | grep -v 'README' | grep -vP '\.(md|markdown|txt)$') ;
         for lib in $libs; do
-          [[ ! -x "t/$lib" ]] && echo "No executable tests for $lib. Failing" && exit 1;
+          [[ ! -x "t/$lib" ]] && echo "No executable tests for $lib. Build will fail." && rc=1;
           ! t/$lib && echo "failure from $lib" && rc=1 ;
         done ;
-      done ; echo "rc is $rc" ;
-      [[ $rc -eq 0 ]] && true
+      done ;
+      [[ $rc -eq 0 ]]
 
   on_success:
     - if [[ "$BRANCH" == "master" ]] && [[ "$IS_PULL_REQUEST" != "true" ]]; then
-        echo "... would build some release assets if tagged"
+        echo "... would build some release assets if tagged" ;
       fi
 
 integrations:
