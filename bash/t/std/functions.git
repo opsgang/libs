@@ -35,7 +35,7 @@ new_commit() {
 }
 
 new_tag() {
-    git tag -a 'new-tag' -m 'bah'
+    git --no-pager tag -a 'new-tag' -m 'bah'
 }
 
 ### git_vars()
@@ -126,7 +126,8 @@ t_git_vars_checked_out_detached_head_tag() {
 
     (
         cd $repo
-        ! new_tag >/dev/null 2>&1 && e "could not create new tag" && exit 1
+        i "... in $PWD" ; git --no-pager status ;
+        ! new_tag && e "could not create new tag" && exit 1
         ! new_commit >/dev/null 2>&1 && e "could not create new commit" && exit 1
         git checkout new-tag >/dev/null 2>&1
 
