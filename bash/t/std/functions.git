@@ -21,14 +21,17 @@ setup() {
 repo_for_test() {
     local repo="$1"
     rm -rf $repo; cp -R $L_REPO $repo; sleep 1
-    (cd $repo; git reset --hard >/dev/null)
+    (
+        cd $repo
+        git reset --hard >/dev/null
+        git config user.name $_USER
+        git config user.email $_EMAIL
+    )
 }
 
 # ... use this for tests that want a repo where the head commit is
 # definitely not tagged.
 new_commit() {
-    git config user.name $_USER
-    git config user.email $_EMAIL
     echo new_commit >>README.md
     git checkout master
     git commit -am 'fake; will not push'
@@ -51,30 +54,30 @@ t_git_info_vars() {
     run_t GIT_INFO_is_sanitised
 }
 
-#### in_git_clone()
-#t_is_git_clone() {
-#    SUITE="is_git_clone()"
-#    run_t success_if_git_cloned
-#    run_t default_check_pwd_is_clone_if_no_arg
-#    run_t error_if_git_clone_dir_not_exist
-#}
-#
-#### check_for_changes
-#t_check_for_changes() {
-#    SUITE="check_for_changes()"
-#    run_t success_if_no_local_changes
-#    run_t skip_local_check_if_devmode
-#    run_t error_if_existing_file_changed
-#    run_t no_error_if_file_added
-#}
-#
-#### sha_in_origin
-#t_sha_in_origin() {
-#    SUITE="sha_in_origin()"
-#    run_t success_if_commit_in_origin
-#    run_t use_GIT_SHA_if_no_arg
-#    run_t use_current_sha_if_no_arg_or_GIT_SHA
-#}
+### in_git_clone()
+t_is_git_clone() {
+    SUITE="is_git_clone()"
+    run_t success_if_git_cloned
+    run_t default_check_pwd_is_clone_if_no_arg
+    run_t error_if_git_clone_dir_not_exist
+}
+
+### check_for_changes
+t_check_for_changes() {
+    SUITE="check_for_changes()"
+    run_t success_if_no_local_changes
+    run_t skip_local_check_if_devmode
+    run_t error_if_existing_file_changed
+    run_t no_error_if_file_added
+}
+
+### sha_in_origin
+t_sha_in_origin() {
+    SUITE="sha_in_origin()"
+    run_t success_if_commit_in_origin
+    run_t use_GIT_SHA_if_no_arg
+    run_t use_current_sha_if_no_arg_or_GIT_SHA
+}
 
 t_git_vars_on_master() {
     local rc=0
@@ -126,8 +129,7 @@ t_git_vars_checked_out_detached_head_tag() {
 
     (
         cd $repo
-        i "... in $PWD" ; git --no-pager status ;
-        ! new_tag && e "could not create new tag" && exit 1
+        ! new_tag >/dev/null 2>&1 && e "could not create new tag" && exit 1
         ! new_commit >/dev/null 2>&1 && e "could not create new commit" && exit 1
         git checkout new-tag >/dev/null 2>&1
 
