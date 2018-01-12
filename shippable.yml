@@ -12,7 +12,8 @@ env:
 build:
 
   ci:
-    - cd bash ;
+    - sudo apt-get update && sudo apt-get install -y coreutils realpath ;
+      cd bash ;
       echo "running tests for bash libs" ;
       rc=0 ;
       for suite in std; do
