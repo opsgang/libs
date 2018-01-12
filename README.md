@@ -3,6 +3,19 @@
 
 ... reusable scripts - retrieve specific versions with [opsgang/fetch][1] :)
 
+[![Run Status](https://api.shippable.com/projects/5a588d01e0a7bb07007efbd7/badge?branch=master)](https://app.shippable.com/github/opsgang/libs)
+
+## builds / pkgs
+
+Currently these run tests against the bash functions.
+
+TODO:
+
+On a git tag push event, create bundles of related scripts and upload
+as binary assets to a github release. e.g. all utility scripts for running terraform,
+or building an AMI _opsgang_ style.
+
+These could then be retrieved with [opsgang/fetch][1].
 
 ## Running tests
 
