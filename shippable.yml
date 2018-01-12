@@ -20,11 +20,10 @@ build:
         libs=$(find $suite -type f | grep -v 'README' | grep -vP '\.(md|markdown|txt)$') ;
         for lib in $libs; do
           [[ ! -x "t/$lib" ]] && echo "No executable tests for $lib. Failing" && exit 1;
-          t/$lib || rc=1 ;
+          ! t/$lib && echo "failure from $lib" && rc=1 ;
         done ;
-      done ;
-      exit $rc ;
-
+      done ; echo "rc is $rc" ;
+      [[ $rc -eq 0 ]] && true
 
   on_success:
     - if [[ "$BRANCH" == "master" ]] && [[ "$IS_PULL_REQUEST" != "true" ]]; then
