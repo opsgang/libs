@@ -1,4 +1,4 @@
-# ./std/functions
+# std/functions
 ---
 
 ## Functions

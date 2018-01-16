@@ -1,4 +1,4 @@
-# ./std/functions.git
+# std/functions.git
 ---
 ## GLOBALS
 

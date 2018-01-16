@@ -137,6 +137,7 @@ END {
         vardoc = "## GLOBALS\n" vardoc "\n"
     }
     fn = FILENAME
+    sub(/^\.\//, "", fn)
     gsub(/_/, "\\_", fn)
     print "# " fn "\n" "---"
     print vardoc
