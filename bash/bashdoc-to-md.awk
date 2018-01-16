@@ -136,7 +136,9 @@ END {
     if (vardoc) {
         vardoc = "## GLOBALS\n" vardoc "\n"
     }
-    print "# " FILENAME "\n" "---"
+    fn = FILENAME
+    gsub(/_/, "\\_", fn)
+    print "# " fn "\n" "---"
     print vardoc
     print "## Functions"
     print toc

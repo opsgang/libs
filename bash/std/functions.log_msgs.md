@@ -1,9 +1,8 @@
-# ./std/functions.log_msgs
+# std/functions.log\_msgs
 ---
 
 ## Functions
 
-* [some\_func](#some_func)
 * [e()](#e)
 * [i()](#i)
 * [d()](#d)
@@ -15,7 +14,7 @@
 
 ---
 
-## some\_func
+## e()
 
 prints ERROR to STDERR, with context prefix and
 stacktrace.
@@ -27,11 +26,9 @@ _\n_ within a str is also treated as newline.
 ### Example
 
 ```bash
-# script.sh
-some_func { e "... went wrong!\nBadly" "Really Badly." }
-## e()
-
-some_func
+ # script.sh
+ some_func { e "... went wrong!\nBadly" "Really Badly." }
+ some_func
 ```
 
 ## i()

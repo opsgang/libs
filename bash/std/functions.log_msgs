@@ -68,9 +68,9 @@ set_log_prefix() {
 # _\n_ within a str is also treated as newline.
 #
 # @example
-#   # script.sh
-#   some_func { e "... went wrong!\nBadly" "Really Badly." }
-#   some_func
+#    # script.sh
+#    some_func { e "... went wrong!\nBadly" "Really Badly." }
+#    some_func
 #
 #   # ... would print something like:
 #   # ERROR script.sh:some_func(): ... went wrong!
