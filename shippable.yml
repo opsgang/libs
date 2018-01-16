@@ -17,7 +17,7 @@ build:
       echo "running tests for bash libs" ;
       rc=0 ;
       for suite in std; do
-        libs=$(find $suite -type f | grep -v 'README' | grep -vP '\.(md|markdown|txt)$') ;
+        libs=$(find $suite -type f | grep -v 'README' | grep -vP '\.(awk|md|markdown|txt)$') ;
         for lib in $libs; do
           [[ ! -x "t/$lib" ]] && echo "No executable tests for $lib. Build will fail." && rc=1;
           ! t/$lib && echo "failure from $lib" && rc=1 ;

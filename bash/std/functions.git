@@ -1,20 +1,22 @@
 # vim: et sr sw=4 ts=4 smartindent syntax=sh:
-#
-# functions for:
-# - getting metadata about sources or actors
-#   e.g. git sha or user running script
-# - ensuring we build or deploy from a known and repeatable version of source
-#
+
 GIT="${GIT:-git --no-pager}"
 GIT_SHA_LEN=${GIT_SHA_LEN:-8}
 
+# @desc checks a dir (defaults to current dir) for git changes.
+# Returns 1 if there are uncommitted git changes.
+#
+# @example
+#   check_for_changes "/in/my/cloned/dir" || exit 1
+#
 check_for_changes() {
-    local d="$1"
+    local d="${1:./}"
     i "... checking for uncommitted changes in $d"
     [[ ! -z "${DEVMODE}" ]] && yellow_i "DEVMODE - skipping" && return 0;
 
     (
         ! cd $d 2>/dev/null && red_e "$d not a directory" && return 1;
+        ! is_git_clone $d && red_e "$d is not a git dir" && return 1;
         if git diff-index --quiet HEAD --
         then
             i "... none found."
@@ -27,6 +29,22 @@ check_for_changes() {
     ) || return 1
 }
 
+# @desc makes sure a git commit exists in the remote origin.
+# Returns 1 if commit does not exist.
+#
+# Defaults to using the value of $GIT_SHA, or else the 
+# current dir's HEAD sha1.
+#
+# @example
+#   # ... current dir's HEAD git sha1 exists in origin?
+#   unset GIT_SHA; sha_in_origin || exit 1
+#   
+#   # sha1 438704b exists in origin?
+#   sha_in_origin 438704b || exit 1
+#
+#   # val of $GIT_SHA is in origin?
+#   GIT_SHA=438704b sha_in_origin || exit 1
+#
 sha_in_origin() {
     local sha=${1:-${GIT_SHA:-$(git_sha)}}
     i "... checking git sha $sha exists in origin"
@@ -52,7 +70,7 @@ sha_in_origin() {
 
 is_git_clone() {
     local rc=0
-    local d="${1:-$PWD}"
+    local d="${1:-./}"
     (
         ! cd $d 2>/dev/null && e "could not cd to $d" && exit 1
         git --no-pager rev-parse --is-inside-work-tree >/dev/null 2>&1
