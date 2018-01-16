@@ -75,7 +75,7 @@ function strip_md(text) {
         defaults = ":_no value_\n"
     }
 
-    vardoc = vardoc "\n* _\$" varname "_\n" defaults
+    vardoc = vardoc "\n* `\$" varname "`\n" defaults
 
 }
 
@@ -119,13 +119,15 @@ in_example {
 
 /^(function )?([a-zA-Z0-9_:-]+)(\(\))? \{/ && docblock != "" {
     sub(/^function /, "")
+    name = $1
+    gsub(/_/, "\\_", name)
 
-    doc = doc "\n" strip_md(render("h1", $1)) "\n" docblock
+    doc = doc "\n" strip_md(render("h1", name)) "\n" docblock
 
-    url = $1
+    url = name
     gsub(/\W/, "", url)
 
-    toc = toc "\n" "* [" $1 "](#" url ")"
+    toc = toc "\n" "* [" name "](#" url ")"
 
     docblock = ""
 }

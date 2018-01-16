@@ -32,11 +32,12 @@ To generate it yourself:
 ```bash
 cd bash
 
-find ./ -type f \
-    | grep -v 'README' \
-    | grep -vP '\.(awk|md|markdown|txt)$') \
-    xargs -n1 -i{} awk -f bashdocs-to-md.awk ${} > ${}.md
-
+libs=$(
+    find ./ -path ./t -prune -o -type f \
+    | grep -v './t\|README' \
+    | grep -vP '\.(awk|md|markdown|txt)$'
+)
+for lib in $libs; do awk -f bashdoc-to-md.awk $lib > $lib.md ; done
 ```
 
 ## BUILDS / PKGS

@@ -122,7 +122,7 @@ set_governance_vars_git() {
         return 1
     fi
 
-    git_info_var
+    git_info_vars
 
     return 0
 }
