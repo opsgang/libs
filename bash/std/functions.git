@@ -105,7 +105,7 @@ git_repo() {
     ${GIT} config remote.origin.url
 }
 
-# @desc Prints sha of current commit - up to $GIT_SHA_LEN chars.
+# @desc Prints sha of current commit - up to $GIT\_SHA\_LEN chars.
 git_sha() {
     ${GIT} rev-parse --short=${GIT_SHA_LEN} --verify HEAD
 }
