@@ -25,7 +25,7 @@ source_files() {
 #
 # **Whitespace and _0_ are considered values.**
 #
-# Returns 1 if any are undefined or non-empty.
+# Returns 1 if any are undefined or empty.
 #
 # @example
 #   # ... test to see $FOO and $BAR are non-empty.
