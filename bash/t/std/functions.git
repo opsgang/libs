@@ -71,7 +71,7 @@ t_error_if_not_a_git_dir() {
         cd $L_NONREPO
         o=$(git_branch 2>&1)
         [[ $? -ne 0 ]] || exit 1 # should fail as not a git repo
-        echo "$o" | grep 'no rev to parse' >/dev/null || exit 1
+        echo "$o" | grep 'not in a git repo' >/dev/null || exit 1
     ) || rc=1
 
     return $rc
@@ -104,7 +104,7 @@ t_if_checkout_tag_show_from_a_tag() {
         ! new_branch >/dev/null 2>&1 && e "could not create new branch" && exit 1
         ! new_commit >/dev/null 2>&1 && e "could not create new commit" && exit 1
         ! checkout_tag >/dev/null 2>&1 && e "couldn't checkout to tag" && exit 1
-        git_branch | grep -Po '^from-a-tag$' >/dev/null
+        git_branch | grep -Po '^$' >/dev/null
     ) || rc=1
 
     rm -rf $repo
@@ -118,10 +118,9 @@ t_git_vars() {
     run_t git_vars_checked_out_branch_with_tag
     run_t git_vars_checked_out_detached_head_tag
 }
-### git_info_vars()
-t_git_info_vars() {
-    SUITE="git_info_vars()"
-    run_t GIT_INFO_is_sanitised
+### git_info_str()
+t_git_info_str() {
+    SUITE="git_info_str()"
 }
 
 ### in_git_clone()
@@ -154,7 +153,8 @@ t_git_vars_on_master() {
     local rc=0
     local repo=/var/tmp/repo_${FUNCNAME[0]}
     local u="$_USER" e="$_EMAIL"
-    local patt="^<master><$T_REPO><\w{$GIT_SHA_LEN}><NO_GIT_TAG><$u><$e><$u $e>$"
+    local git_info="repo:$T_REPO sha1:\w{$GIT_SHA_LEN} tag:-no tag- branch:master"
+    local patt="^<master><$T_REPO><\w{$GIT_SHA_LEN}><><$u><$e><$u $e><$git_info>$" # tag is empty
     repo_for_test $repo
 
     (
@@ -163,7 +163,7 @@ t_git_vars_on_master() {
 
         git_vars
 
-        str="<$GIT_BRANCH><$GIT_REPO><$GIT_SHA><$GIT_TAG><$GIT_USER><$GIT_EMAIL><$GIT_ID>"
+        str="<$GIT_BRANCH><$GIT_REPO><$GIT_SHA><$GIT_TAG><$GIT_USER><$GIT_EMAIL><$GIT_ID><$GIT_INFO>"
         echo "$str" | grep -P "$patt" >/dev/null
     ) || rc=1
 
@@ -171,6 +171,8 @@ t_git_vars_on_master() {
     return $rc
 }
 
+# $GIT_BRANCH and GIT_TAG should both have values when
+# checked-out branch's current commit is tagged.
 t_git_vars_checked_out_branch_with_tag() {
     local rc=0
     local repo=/var/tmp/repo_${FUNCNAME[0]}
@@ -190,12 +192,13 @@ t_git_vars_checked_out_branch_with_tag() {
     return $rc
 }
 
+# $GIT_BRANCH should be empty when on a detached head
 t_git_vars_checked_out_detached_head_tag() {
     local rc=0
     local repo=/var/tmp/repo_${FUNCNAME[0]}
-    local patt=".*"
     local u="$_USER" e="$_EMAIL"
-    local patt="^<from-a-tag><$T_REPO><\w{$GIT_SHA_LEN}><new-tag><$u><$e><$u $e>$"
+    local git_info="repo:$T_REPO sha1:\w{$GIT_SHA_LEN} tag:new-tag branch:-no branch-"
+    local patt="^<><$T_REPO><\w{$GIT_SHA_LEN}><new-tag><$u><$e><$u $e><$git_info>$"
     repo_for_test $repo
 
     (
@@ -203,10 +206,8 @@ t_git_vars_checked_out_detached_head_tag() {
         ! new_tag >/dev/null 2>&1 && e "could not create new tag" && exit 1
         ! new_commit >/dev/null 2>&1 && e "could not create new commit" && exit 1
         git checkout new-tag >/dev/null 2>&1
-
-        git_vars
-
-        str="<$GIT_BRANCH><$GIT_REPO><$GIT_SHA><$GIT_TAG><$GIT_USER><$GIT_EMAIL><$GIT_ID>"
+        git_vars ;
+        str="<><$GIT_REPO><$GIT_SHA><$GIT_TAG><$GIT_USER><$GIT_EMAIL><$GIT_ID><$GIT_INFO>"
         echo "$str" | grep -P "$patt" >/dev/null
     ) || rc=1
 
@@ -222,7 +223,7 @@ t_GIT_INFO_is_sanitised() {
         GIT_SHA='!"£$%^&*()_>-+=<`\\|'
         GIT_TAG=1.3.9
         GIT_BRANCH=foo
-        git_info_vars
+        GIT_INFO=$(git_info_str)
         [[ "$GIT_INFO" == "$exp" ]] || exit 1
     )
 }
@@ -237,7 +238,7 @@ t_success_if_git_cloned() {
 }
 
 t_error_if_git_clone_dir_not_exist() {
-    is_git_clone /foo/bar 2>&1 | grep 'could not cd to /foo/bar' >/dev/null
+    is_git_clone /foo/bar 2>&1 | grep "couldn't cd to /foo/bar" >/dev/null
 }
 
 t_default_check_pwd_is_clone_if_no_arg() {
