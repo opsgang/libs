@@ -5,9 +5,15 @@
 
 [![Run Status](https://api.shippable.com/projects/5a588d01e0a7bb07007efbd7/badge?branch=master)](https://app.shippable.com/github/opsgang/libs)
 
+**You need to have GNU coreutils installed for these scripts to work.**
+
+Mac users: We use `realpath`, and GNU versions of `sed`, `awk`, `sort`.
+
+BSD flavours will not work, so `homebrew` some GNU-ey goodness if you plan to use these scripts locally.
+
 ## USAGE
 
-Typically we source all files under bash/std/ (not READMEs, though!) in our scripts
+Typically we source all scripts under bash/std/ in our scripts
 
 To grab these to a local dir e.g. ./lib, you can use fetch:
 
@@ -56,11 +62,18 @@ These could then be retrieved with [opsgang/fetch][1].
 
 ```bash
 
-cd bash
+cd ./bash # all tests must be run from this dir.
 
+# to run all tests for a particular script e.g. std/functions:
+t/std/functions
+
+# to run individual tests for a script e.g. for std/functions
+t/std/functions t_can_source_multiple_files t_check_var_defined
+
+# to run all tests for all scripts under ./std
 t() {
     local suite="$1" rc=0
-    [[ "$(basename $(realpath -- .))" != "bash" ]] && echo 'ERROR: run from ./bash dir' && return 1
+    [[ "$(basename $(realpath .))" != "bash" ]] && echo 'ERROR: run from ./bash dir' && return 1
     [[ -z "$suite" ]] && echo 'ERROR: pass suite name' >&2 && return 1
 
     libs=$(find $suite -type f | grep -v 'README' | grep -vP '\.(awk|md|markdown|txt)$')
@@ -73,7 +86,6 @@ t() {
     return $rc
 }
 
-# run tests for functions under ./std
 t ./std
 
 ```

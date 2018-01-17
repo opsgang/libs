@@ -99,5 +99,5 @@ t_will_error_if_file_can_not_be_sourced() {
 
 ! . t/functions.t && echo "ERROR $0: could not source functions.t" && exit 1
 source_src_and_deps "std/functions.log_msgs" || exit 1
-run_all
+run $*
 
