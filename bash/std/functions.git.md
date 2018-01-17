@@ -127,11 +127,13 @@ Convenience function. Gets git info for current dir
 Exports vars you can use for governance info.
 
 EXPORTED VARS:
- $GIT\_REPO, $GIT\_BRANCH, $GIT\_TAG, $GIT\_SHA,
- $GIT\_USER, $GIT\_EMAIL, $GIT\_ID, $GIT\_INFO (see git\_info\_str)
 
-Each var has a corresponding function with the same name lowercased. See the docs for each
-to understand output of each.
+ $GIT\_REPO, $GIT\_BRANCH, $GIT\_TAG, $GIT\_SHA,
+
+ $GIT\_USER, $GIT\_EMAIL, $GIT\_ID, $GIT\_INFO ([see git\_info\_str()](#git_info_str))
+
+Each var has a corresponding function with the same name lowercased. See each
+one's doc to understand its output.
 
 **CAVEAT**: if you run this in a sub-shell e.g. $( git\_vars ) or ( git\_vars )
 the values will not be available outside of the sub-shell.
