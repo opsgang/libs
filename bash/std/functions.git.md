@@ -32,12 +32,18 @@
 
 checks a dir (defaults to current dir) for git changes.
 Returns 1 if there are uncommitted git changes.
-User can pass the dir path as an arg. If not, ./ is checked.
+User can pass the dir path as an arg.
+If not the current dir is checked.
+
+If $DEVMODE is non-empty, the check will be skipped.
 
 ### Example
 
 ```bash
 check_for_changes "/in/my/cloned/dir" || exit 1
+
+# ... skip check for now, I'm engineering ...
+DEVMODE=true check_for_changes "/some/dir"
 
 ```
 
@@ -49,17 +55,25 @@ Returns 1 if commit does not exist.
 Defaults to using the value of $GIT_SHA, or else the
 current dir's HEAD sha1.
 
+If $DEVMODE is non-empty, the check will be skipped.
+
+This is useful when you're developing code and don't
+care that the code changes are not yet in the remote.
+
 ### Example
 
 ```bash
-# ... current dir's HEAD git sha1 exists in origin?
-unset GIT_SHA; sha_in_origin || exit 1
-
 # sha1 438704b exists in origin?
 sha_in_origin 438704b || exit 1
 
 # val of $GIT_SHA is in origin?
 GIT_SHA=438704b sha_in_origin || exit 1
+
+# ... current dir's HEAD sha1 exists in origin?
+sha_in_origin || exit 1
+
+# ... skip check for now, I'm engineering ...
+DEVMODE=true sha_in_origin
 
 ```
 
