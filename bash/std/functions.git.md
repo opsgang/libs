@@ -87,21 +87,26 @@ Returns 1 if current working dir is not in a git repo.
 ## git\_repo()
 
 Prints remote.origin.url from current dir's git config.
+Empty str if not set.
 ## git\_sha()
 
 Prints sha of current commit - up to $GIT\_SHA\_LEN chars.
 ## git\_tag()
 
 Prints out the git-tag on the current commit (exact match only)
+Prints empty str if there is none.
 ## git\_user()
 
 Prints user.name (from git config)
+Returns 1 if not set.
 ## git\_email()
 
 Prints user.email (from git config)
+Returns 1 if not set.
 ## git\_id()
 
 Prints user.name user.email (from git config)
+Returns 1 if user.name not set.
 ## git\_info\_str()
 
 Outputs a str formed of repo, sha1, tag and branch info.

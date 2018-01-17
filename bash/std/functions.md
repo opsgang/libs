@@ -33,7 +33,7 @@ or empty vals.
 
 **Whitespace and _0_ are considered values.**
 
-Returns 1 if any are undefined or non-empty.
+Returns 1 if any are undefined or empty.
 
 ### Example
 
