@@ -23,7 +23,8 @@
 * [git\_user()](#git_user)
 * [git\_email()](#git_email)
 * [git\_id()](#git_id)
-* [git\_info\_vars()](#git_info_vars)
+* [git\_info\_str()](#git_info_str)
+* [git\_vars()](#git_vars)
 
 ---
 
@@ -68,14 +69,14 @@ User can pass path to test as arg. Defaults to current dir.
 
 ## git\_branch()
 
-Prints branch name unless you've checked out a tag (prints from-a-tag).
+Prints branch name unless you've checked out a tag.
 Returns 1 if current working dir is not in a git repo.
 ## git\_repo()
 
 Prints remote.origin.url from current dir's git config.
 ## git\_sha()
 
-Prints sha of current commit - up to `$GIT_SHA_LEN` chars.
+Prints sha of current commit - up to $GIT\_SHA\_LEN chars.
 ## git\_tag()
 
 Prints out the git-tag on the current commit (exact match only)
@@ -88,17 +89,37 @@ Prints user.email (from git config)
 ## git\_id()
 
 Prints user.name user.email (from git config)
-## git\_info\_vars()
+## git\_info\_str()
 
-`export` of `$GIT_INFO` - _sanitised_ str formed of repo, sha1, tag, branch info
-with special chars replaced with underscores.
-
-`$GIT_INFO` is suitable to use as an AWS tag value, or to consume in a shell script.
-Also exported is `$RAW_GIT_INFO` - the unsanitized version of the str.
+Outputs a str formed of repo, sha1, tag and branch info.
+User can pass a path to use for getting the git info
 
 ### Example
 
 ```bash
-GIT_REPO
+# ... produce info str for current dir
+out=$(git_info_str)
+```
+
+## git\_vars()
+
+Convenience function. Gets git info for current dir
+Exports vars you can use for governance info.
+
+EXPORTED VARS:
+ $GIT\_REPO, $GIT\_BRANCH, $GIT\_TAG, $GIT\_SHA,
+ $GIT\_USER, $GIT\_EMAIL, $GIT\_ID, $GIT\_INFO (see git\_info\_str)
+
+Each var has a corresponding function with the same name lowercased. See the docs for each
+to understand output of each.
+
+**CAVEAT**: if you run this in a sub-shell e.g. $( git\_vars ) or ( git\_vars )
+the values will not be available outside of the sub-shell.
+
+### Example
+
+```bash
+git_vars || exit 1
+echo "I am in a local clone of $GIT_REPO on branch $GIT_BRANCH"
 ```
 
