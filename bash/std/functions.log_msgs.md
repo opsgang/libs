@@ -29,6 +29,15 @@ _\n_ within a str is also treated as newline.
  # script.sh
  some_func { e "... went wrong!\nBadly" "Really Badly." }
  some_func
+
+# ... would print something like:
+# ERROR script.sh:some_func(): ... went wrong!
+# ERROR script.sh:some_func(): ... Badly
+# ERROR script.sh:some_func(): ... Really Badly.
+# ERROR script.sh:some_func(): TRACE:
+# ERROR script.sh:some_func(): some_func() (line 2)
+# ERROR script.sh:some_func():       main() (line 3)
+
 ```
 
 ## i()
@@ -42,6 +51,12 @@ _\n_ within a str is also treated as newline.
 
 ```bash
 i "msg line 1" "line 2\nline3"
+
+# ... would print something like:
+# INFO script.sh:main(): ... msg line 1
+# INFO script.sh:main(): ... line 2
+# INFO script.sh:main(): ... line 3
+
 ```
 
 ## d()

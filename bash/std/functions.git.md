@@ -38,6 +38,7 @@ User can pass the dir path as an arg. If not, ./ is checked.
 
 ```bash
 check_for_changes "/in/my/cloned/dir" || exit 1
+
 ```
 
 ## sha\_in\_origin()
@@ -53,6 +54,13 @@ current dir's HEAD sha1.
 ```bash
 # ... current dir's HEAD git sha1 exists in origin?
 unset GIT_SHA; sha_in_origin || exit 1
+
+# sha1 438704b exists in origin?
+sha_in_origin 438704b || exit 1
+
+# val of $GIT_SHA is in origin?
+GIT_SHA=438704b sha_in_origin || exit 1
+
 ```
 
 ## is\_git\_clone()
@@ -65,6 +73,11 @@ User can pass path to test as arg. Defaults to current dir.
 ### Example
 
 ```bash
+
+is_git_clone || exit 1 # current dir is in a git clone?
+
+is_git_clone /my/project/file || exit 1 # is file inside a git clone?
+
 ```
 
 ## git\_branch()
@@ -99,6 +112,13 @@ User can pass a path to use for getting the git info
 ```bash
 # ... produce info str for current dir
 out=$(git_info_str)
+
+# ... produce info str for /my/project/repo
+out=$(git_info_str /my/project/repo)
+
+# example $out
+# repo:git@github.com:opsgang/blah sha1:bc342d35 tag:-no tag- branch:master
+
 ```
 
 ## git\_vars()
@@ -121,5 +141,6 @@ the values will not be available outside of the sub-shell.
 ```bash
 git_vars || exit 1
 echo "I am in a local clone of $GIT_REPO on branch $GIT_BRANCH"
+
 ```
 

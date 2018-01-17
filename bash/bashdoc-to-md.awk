@@ -99,12 +99,12 @@ in_desc {
 }
 
 in_example {
-    if (! /^#[ ]{3}/) {
+    if (! /^#/) {
         in_example = 0
 
         docblock = docblock "\n" render("/code") "\n"
     } else {
-        sub(/^#[ ]{3}/, "")
+        sub(/^#([ ]{3})?/, "")
 
         docblock = docblock "\n" $0
     }

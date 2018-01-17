@@ -23,6 +23,7 @@ own fault.
 source_files "./foo /bar/foo ../foo"
 # or ...
 source_files "./foo" "/bar/spaces\ in-name"
+
 ```
 
 ## required\_vars()
@@ -39,6 +40,7 @@ Returns 1 if any are undefined or non-empty.
 ```bash
 # ... test to see $FOO and $BAR are non-empty.
 required_vars "FOO BAR" || exit 1
+
 ```
 
 ## envsubst\_tokens\_list()
@@ -57,6 +59,7 @@ SHELL-FORMAT.
 ```bash
 # ... produces "${FOO} ${BAR}"
 str=envsubst_tokens_list "FOO BAR"
+
 ```
 
 ## random\_str()
