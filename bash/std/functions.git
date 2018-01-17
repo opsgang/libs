@@ -115,6 +115,7 @@ git_branch() {
 }
 
 # @desc Prints remote.origin.url from current dir's git config.
+# Empty str if not set.
 git_repo() {
     ${GIT} config remote.origin.url || echo ""
 }
@@ -125,21 +126,25 @@ git_sha() {
 }
 
 # @desc Prints out the git-tag on the current commit (exact match only)
+# Prints empty str if there is none.
 git_tag() {
     ${GIT} describe --exact-match --tags 2>/dev/null || echo ""
 }
 
 # @desc Prints user.name (from git config)
+# Returns 1 if not set.
 git_user() {
-    ${GIT} config user.name
+    ${GIT} config user.name || return 1
 }
 
 # @desc Prints user.email (from git config)
+# Returns 1 if not set.
 git_email() {
-    ${GIT} config user.email
+    ${GIT} config user.email || return 1
 }
 
 # @desc Prints user.name user.email (from git config)
+# Returns 1 if user.name not set.
 git_id() {
     local u=$(git_user)
     local e=$(git_email)
