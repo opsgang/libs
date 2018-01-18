@@ -186,13 +186,29 @@ git_info_str() {
     (
         __cd $d || exit 1
         ! is_git_clone && e "can't get git info for $(pwd) - not a git dir" && return 1
-        repo=$(git_repo) ; [[ -z "$tag" ]] && tag="-no remote-"
-        sha=$(git_sha)
-        tag=$(git_tag) ; [[ -z "$tag" ]] && tag="-no tag-"
-        branch=$(git_branch) || return 1 ; [[ -z "$branch" ]] && branch="-no branch-"
 
-        echo "repo:$repo sha1:$sha tag:$tag branch:$branch"
+        repo="$(git_repo)"
+        sha="$(git_sha)"
+        tag="$(git_tag)"
+        branch="$(git_branch)" || return 1
+
+        _git_info_str "$repo" "$sha" "$tag" "$branch"
+
     ) || return 1
+}
+
+# _git_info_str():
+# called by git_info() and git_vars()
+# You must double quote args when calling this function, as we need to preserve empty values.
+_git_info_str() {
+    local r="${1:--no remote-}" # repo   || empty str
+    local s="$2"                # sha1   || can not be empty
+    local t="${3:--no tag-}"    # tag    || empty str
+    local b="${4:--no branch-}" # branch || empty str
+
+    [[ -z "$s" ]] && e "... requires a sha1 as second param" && return 1
+
+    echo "repo:$r sha1:$s tag:${t} branch:$b"
 }
 
 # @desc Convenience function. Gets git info for current dir
@@ -202,7 +218,9 @@ git_info_str() {
 #
 #  $GIT\_REPO, $GIT\_BRANCH, $GIT\_TAG, $GIT\_SHA,
 #
-#  $GIT\_USER, $GIT\_EMAIL, $GIT\_ID, $GIT\_INFO ([see git\_info\_str()](#git_info_str))
+#  $GIT\_USER, $GIT\_EMAIL, $GIT\_ID.
+#
+#  Also $GIT\_INFO - [see git\_info\_str()](#git_info_str) for example value.
 #
 # Each var has a corresponding function with the same name lowercased. See each
 # one's doc to understand its output.
@@ -224,6 +242,6 @@ git_vars() {
     export GIT_USER="$(git_user)"
     export GIT_EMAIL="$(git_email)"
     export GIT_ID="$(git_id)" # git user and email, space separated
-    export GIT_INFO="$(git_info_str)"
+    export GIT_INFO=$(_git_info_str "$GIT_REPO" "$GIT_SHA" "$GIT_TAG" "$GIT_BRANCH")
 
 }

@@ -206,7 +206,7 @@ t_git_vars_checked_out_detached_head_tag() {
         ! new_tag >/dev/null 2>&1 && e "could not create new tag" && exit 1
         ! new_commit >/dev/null 2>&1 && e "could not create new commit" && exit 1
         git checkout new-tag >/dev/null 2>&1
-        git_vars ;
+        git_vars
         str="<><$GIT_REPO><$GIT_SHA><$GIT_TAG><$GIT_USER><$GIT_EMAIL><$GIT_ID><$GIT_INFO>"
         echo "$str" | grep -P "$patt" >/dev/null
     ) || rc=1

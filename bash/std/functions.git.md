@@ -149,7 +149,9 @@ EXPORTED VARS:
 
  $GIT\_REPO, $GIT\_BRANCH, $GIT\_TAG, $GIT\_SHA,
 
- $GIT\_USER, $GIT\_EMAIL, $GIT\_ID, $GIT\_INFO ([see git\_info\_str()](#git_info_str))
+ $GIT\_USER, $GIT\_EMAIL, $GIT\_ID.
+
+ Also $GIT\_INFO - [see git\_info\_str()](#git_info_str) for example value.
 
 Each var has a corresponding function with the same name lowercased. See each
 one's doc to understand its output.
