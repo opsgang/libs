@@ -1,25 +1,42 @@
 # vim: et sr sw=4 ts=4 smartindent syntax=sh:
+# ... these depend on std/functions and std/functions.log_msgs
 #
-# functions for:
-# - getting metadata about sources or actors
-#   e.g. git sha or user running script
-# - ensuring we build or deploy from a known and repeatable version of source
-#
+
+# TODO:   run_t GIT_INFO_is_sanitised
+#    # ... sanitised string (suitable as unquoted val of var or, for example, aws tag value)
+#    export GIT_INFO=$(echo ${RAW_GIT_INFO} | tr -c '[[:alnum:] _.:/=+-@\n]' '_')
+#    cd $_pwd
+
 GIT="${GIT:-git --no-pager}"
 GIT_SHA_LEN=${GIT_SHA_LEN:-8}
 
+# @desc checks a dir (defaults to current dir) for git changes.
+# Returns 1 if there are uncommitted git changes.
+# User can pass the dir path as an arg.
+# If not the current dir is checked.
+#
+# If $DEVMODE is non-empty, the check will be skipped.
+#
+# @example
+#   check_for_changes "/in/my/cloned/dir" || exit 1
+#
+#   # ... skip check for now, I'm engineering ...
+#   DEVMODE=true check_for_changes "/some/dir"
+#
 check_for_changes() {
     local d="$1"
     i "... checking for uncommitted changes in $d"
     [[ ! -z "${DEVMODE}" ]] && yellow_i "DEVMODE - skipping" && return 0;
 
     (
-        ! cd $d 2>/dev/null && red_e "$d not a directory" && return 1;
+        __cd $d || exit 1
+
+        ! is_git_clone && red_e "$(pwd) is not a git dir" && return 1;
         if git diff-index --quiet HEAD --
         then
             i "... none found."
         else
-            msg="... local changes in $d"
+            msg="... local changes in $(pwd)"
             msg="$msg\n... Commit them (tag the commit if wanted) then run this."
             red_e "$msg"
             exit 1
@@ -27,6 +44,30 @@ check_for_changes() {
     ) || return 1
 }
 
+# @desc makes sure a git commit exists in the remote origin.
+# Returns 1 if commit does not exist.
+#
+# Defaults to using the value of $GIT_SHA, or else the
+# current dir's HEAD sha1.
+#
+# If $DEVMODE is non-empty, the check will be skipped.
+#
+# This is useful when you're developing code and don't
+# care that the code changes are not yet in the remote.
+#
+# @example
+#   # sha1 438704b exists in origin?
+#   sha_in_origin 438704b || exit 1
+#
+#   # val of $GIT_SHA is in origin?
+#   GIT_SHA=438704b sha_in_origin || exit 1
+#
+#   # ... current dir's HEAD sha1 exists in origin?
+#   sha_in_origin || exit 1
+#
+#   # ... skip check for now, I'm engineering ...
+#   DEVMODE=true sha_in_origin
+#
 sha_in_origin() {
     local sha=${1:-${GIT_SHA:-$(git_sha)}}
     i "... checking git sha $sha exists in origin"
@@ -50,43 +91,74 @@ sha_in_origin() {
     ) || return 1
 }
 
+# @desc Tests whether a path is inside a git-cloned dir
+# Returns 1 if not.
+#
+# User can pass path to test as arg. Defaults to current dir.
+#
+# @example
+#
+#   is_git_clone || exit 1 # current dir is in a git clone?
+#
+#   is_git_clone /my/project/file || exit 1 # is file inside a git clone?
+#
 is_git_clone() {
     local rc=0
-    local d="${1:-$PWD}"
+    local d="$1"
     (
-        ! cd $d 2>/dev/null && e "could not cd to $d" && exit 1
+        __cd $d || exit 1
         git --no-pager rev-parse --is-inside-work-tree >/dev/null 2>&1
     ) || rc=1
     return $rc
 }
 
+# __cd() - if user passed a path, cd to it.
+__cd() {
+    local d="$1"
+    [[ ! -z "$d" ]] && ! cd $d 2>/dev/null && red_e "couldn't cd to $d" && return 1;
+    return 0
+}
+
+# @desc Prints branch name unless you've checked out a tag.
+# Returns 1 if current working dir is not in a git repo.
 git_branch() {
     r=$(${GIT} rev-parse --abbrev-ref HEAD)
-    [[ -z "$r" ]] && e "no rev to parse when finding branch?" && return 1
-    [[ "$r" == "HEAD" ]] && r="from-a-tag"
+    [[ -z "$r" ]] && e "$(pwd) is not in a git repo" && return 1
+    [[ "$r" == "HEAD" ]] && r=""
     echo "$r"
 }
 
+# @desc Prints remote.origin.url from current dir's git config.
+# Empty str if not set.
 git_repo() {
-    ${GIT} config remote.origin.url
+    ${GIT} config remote.origin.url || echo ""
 }
 
+# @desc Prints sha of current commit - up to $GIT\_SHA\_LEN chars.
 git_sha() {
     ${GIT} rev-parse --short=${GIT_SHA_LEN} --verify HEAD
 }
 
+# @desc Prints out the git-tag on the current commit (exact match only)
+# Prints empty str if there is none.
 git_tag() {
-    ${GIT} describe --exact-match --tags 2>/dev/null
+    ${GIT} describe --exact-match --tags 2>/dev/null || echo ""
 }
 
+# @desc Prints user.name (from git config)
+# Returns 1 if not set.
 git_user() {
-    ${GIT} config user.name
+    ${GIT} config user.name || return 1
 }
 
+# @desc Prints user.email (from git config)
+# Returns 1 if not set.
 git_email() {
-    ${GIT} config user.email
+    ${GIT} config user.email || return 1
 }
 
+# @desc Prints user.name user.email (from git config)
+# Returns 1 if user.name not set.
 git_id() {
     local u=$(git_user)
     local e=$(git_email)
@@ -94,61 +166,82 @@ git_id() {
     echo $u $e
 }
 
-set_governance_vars_git() {
+# @desc Outputs a str formed of repo, sha1, tag and branch info.
+# User can pass a path to use for getting the git info
+#
+# @example
+#   # ... produce info str for current dir
+#   out=$(git_info_str)
+#
+#   # ... produce info str for /my/project/repo
+#   out=$(git_info_str /my/project/repo)
+#
+#   # example $out
+#   # repo:git@github.com:opsgang/blah sha1:bc342d35 tag:-no tag- branch:master
+#
+git_info_str() {
+    local d="$1" # optional dir path
+    local branch="" repo="" sha="" tag=""
 
-    git_vars || return 1
+    (
+        __cd $d || exit 1
+        ! is_git_clone && e "can't get git info for $(pwd) - not a git dir" && return 1
 
-    if ! required_vars "GIT_REPO GIT_USER GIT_SHA"
-    then
-        e "... could not retrieve git info to use for governance"
-        return 1
-    fi
+        repo="$(git_repo)"
+        sha="$(git_sha)"
+        tag="$(git_tag)"
+        branch="$(git_branch)" || return 1
 
-    git_info_var
+        _git_info_str "$repo" "$sha" "$tag" "$branch"
 
-    return 0
+    ) || return 1
 }
 
-git_info_vars() {
+# _git_info_str():
+# called by git_info() and git_vars()
+# You must double quote args when calling this function, as we need to preserve empty values.
+_git_info_str() {
+    local r="${1:--no remote-}" # repo   || empty str
+    local s="$2"                # sha1   || can not be empty
+    local t="${3:--no tag-}"    # tag    || empty str
+    local b="${4:--no branch-}" # branch || empty str
 
-    required_vars "GIT_REPO GIT_SHA GIT_TAG GIT_BRANCH" || return 1
+    [[ -z "$s" ]] && e "... requires a sha1 as second param" && return 1
 
-    export RAW_GIT_INFO="repo:${GIT_REPO} sha1:${GIT_SHA} tag:${GIT_TAG} branch:${GIT_BRANCH}"
-
-    # ... sanitised string (suitable for unquoted val to var or aws tag value)
-    export GIT_INFO=$(echo ${RAW_GIT_INFO} | tr -c '[[:alnum:] _.:/=+-@\n]' '_')
+    echo "repo:$r sha1:$s tag:${t} branch:$b"
 }
 
+# @desc Convenience function. Gets git info for current dir
+# Exports vars you can use for governance info.
+#
+# EXPORTED VARS:
+#
+#  $GIT\_REPO, $GIT\_BRANCH, $GIT\_TAG, $GIT\_SHA,
+#
+#  $GIT\_USER, $GIT\_EMAIL, $GIT\_ID.
+#
+#  Also $GIT\_INFO - [see git\_info\_str()](#git_info_str) for example value.
+#
+# Each var has a corresponding function with the same name lowercased. See each
+# one's doc to understand its output.
+#
+# **CAVEAT**: if you run this in a sub-shell e.g. $( git\_vars ) or ( git\_vars )
+# the values will not be available outside of the sub-shell.
+#
+# @example
+#   git_vars || exit 1
+#   echo "I am in a local clone of $GIT_REPO on branch $GIT_BRANCH"
+#
 git_vars() {
     ! is_git_clone && e "... $PWD is not inside a git repo" && return 1
 
-    export GIT_BRANCH="$(git_branch || echo 'NO_GIT_BRANCH')"
-    export GIT_REPO="$(git_repo || echo 'NO_REMOTE')"
+    GIT_BRANCH="$(git_branch)" || return 1 ; export GIT_BRANCH
+    export GIT_TAG="$(git_tag)"
+    export GIT_REPO="$(git_repo)"
     export GIT_SHA="$(git_sha)"
-    export GIT_TAG="$(git_tag || echo "NO_GIT_TAG")"
-    export GIT_USER="$(git_user || echo "NO_GIT_USER")"
-    export GIT_EMAIL="$(git_email || echo "NO_EMAIL")"
+    export GIT_USER="$(git_user)"
+    export GIT_EMAIL="$(git_email)"
     export GIT_ID="$(git_id)" # git user and email, space separated
+    export GIT_INFO=$(_git_info_str "$GIT_REPO" "$GIT_SHA" "$GIT_TAG" "$GIT_BRANCH")
 
-}
-
-performed_by() {
-    # ... if kicked off by ci tool, use BUILD_URL (works for circleci, jenkins, travis, shippable)
-    [[ ! -z "${BUILD_URL}" ]] && echo "$BUILD_URL" && return 0
-
-    # ... if run by an AWS instance or user
-    if [[ ! -z "${AWS_PROFILE}${AWS_DEFAULT_PROFILE}${AWS_ACCESS_KEY_ID}" ]]; then
-        id=$(aws iam get-user --query 'User.UserName' --output text 2>/dev/null)
-        if [[ $? -ne 0 ]]; then
-            id=$(aws sts get-caller-identity --query 'Arn' --output text 2>/dev/null)
-        fi
-        [[ ! -z "${id}" ]] && echo "$id" && return 0
-    fi
-
-    # ... finally, try to use git user from set_governance_vars_git
-    id=${GIT_USER}
-    [[ ! -z "${id}" ]] && echo "$id" && return 0
-
-    e "performed_by(): unknown person triggered action - tried BUILD_URL, aws and git cfg"
-    return 1
 }

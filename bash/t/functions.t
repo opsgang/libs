@@ -7,16 +7,17 @@ run_t() {
     local pad=""
     local desc="$func"
     local t_func="t_$func"
+    local rc=0
 
     [[ ! -z "$SUITE" ]] && pad="    " && desc="[$SUITE] $func"
     if declare -f $t_func >/dev/null
     then
         echo "INFO $0:$pad running test for: $desc"
-        ! $t_func && FAILURES="$FAILURES $t_func" && return 1
-        return 0
+        ! $t_func && FAILURES="$FAILURES $t_func" && rc=1
     else
         echo "INFO $0: no tests for $func. Skipping"
     fi
+    return $rc
 }
 
 funcs_to_test() {
@@ -34,12 +35,28 @@ source_src_and_deps() {
     return $rc
 }
 
+run() {
+    local args="$*"
+    local _t=""
+    if [[ -z "$args" ]]; then
+        run_all
+    else
+        for _t in $* ; do
+            run_t ${_t#t_}
+        done
+    fi
+
+    results
+}
+
 run_all() {
     for func in $(funcs_to_test $SRC); do
         run_t $func
         unset SUITE
     done
+}
 
+results() {
     if [[ "$FAILURES" =~ ^[\ ]*$ ]]; then
         echo "INFO: ALL TESTS SUCCESSFUL"
         return 0

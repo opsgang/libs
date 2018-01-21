@@ -4,23 +4,30 @@
 
 T_REPO=https://github.com/opsgang/libs
 L_REPO=/var/tmp/repo.src
+L_NONREPO=/var/tmp/not-a-git-repo
 _USER="boo"
 _EMAIL="boo@boo.com"
+HEAD_SHA="set-in-setup()"
+SECOND_SHA="set-in-setup()"
 
 setup() {
     i "... setting up for tests"
-    rm -rf $L_REPO 2>/dev/null
-    git clone --depth 5 --branch master $T_REPO $L_REPO || return 1
-    here=$PWD
+    if [[ -z "$TESTS_DEVMODE" ]]; then
+        rm -rf $L_REPO $L_NONREPO 2>/dev/null
+        ! mkdir $L_NONREPO && red_e "... failed creating $L_NONREPO" && return 1
+        git clone --depth 5 --branch master $T_REPO $L_REPO || return 1
+    fi
+    local d=$(pwd)
     cd $L_REPO
+    git reset --hard >/dev/null
     HEAD_SHA=$(git log --format='%H' | head -n 1)
     SECOND_SHA=$(git log --format='%H' | head -n 2 | tail -n 1)
-    cd $here
+    cd $d
 }
 
 repo_for_test() {
     local repo="$1"
-    rm -rf $repo; cp -R $L_REPO $repo; sleep 1
+    rm -rf $repo; cp -R $L_REPO $repo; sleep 0.5
     (
         cd $repo
         git reset --hard >/dev/null
@@ -41,6 +48,69 @@ new_tag() {
     git --no-pager tag -a 'new-tag' -m 'bah'
 }
 
+new_branch() {
+    git checkout -b new-branch >/dev/null 2>&1
+}
+
+checkout_tag() {
+    git checkout new-tag >/dev/null 2>&1
+}
+
+### git_branch()
+t_git_branch() {
+    SUITE="git_branch()"
+    run_t error_if_not_a_git_dir
+    run_t if_head_commit_tagged_still_show_branch
+    run_t if_checkout_tag_show_from_a_tag
+}
+
+t_error_if_not_a_git_dir() {
+    local rc=0
+    local o=""
+    (
+        cd $L_NONREPO
+        o=$(git_branch 2>&1)
+        [[ $? -ne 0 ]] || exit 1 # should fail as not a git repo
+        echo "$o" | grep 'not in a git repo' >/dev/null || exit 1
+    ) || rc=1
+
+    return $rc
+}
+
+t_if_head_commit_tagged_still_show_branch() {
+    local rc=0
+    local repo=/var/tmp/repo_${FUNCNAME[0]}
+    repo_for_test $repo
+
+    (
+        cd $repo
+        ! new_branch >/dev/null 2>&1 && e "could not create new branch" && exit 1
+        ! new_tag >/dev/null 2>&1 && e "could not create new tag" && exit 1
+        git_branch | grep -Po '^new-branch$' >/dev/null
+    ) || rc=1
+
+    rm -rf $repo
+    return $rc
+}
+
+t_if_checkout_tag_show_from_a_tag() {
+    local rc=0
+    local repo=/var/tmp/repo_${FUNCNAME[0]}
+    repo_for_test $repo
+
+    (
+        cd $repo
+        ! new_tag >/dev/null 2>&1 && e "could not create new tag" && exit 1
+        ! new_branch >/dev/null 2>&1 && e "could not create new branch" && exit 1
+        ! new_commit >/dev/null 2>&1 && e "could not create new commit" && exit 1
+        ! checkout_tag >/dev/null 2>&1 && e "couldn't checkout to tag" && exit 1
+        git_branch | grep -Po '^$' >/dev/null
+    ) || rc=1
+
+    rm -rf $repo
+    return $rc
+}
+
 ### git_vars()
 t_git_vars() {
     SUITE="git_vars()"
@@ -48,10 +118,9 @@ t_git_vars() {
     run_t git_vars_checked_out_branch_with_tag
     run_t git_vars_checked_out_detached_head_tag
 }
-### git_info_vars()
-t_git_info_vars() {
-    SUITE="git_info_vars()"
-    run_t GIT_INFO_is_sanitised
+### git_info_str()
+t_git_info_str() {
+    SUITE="git_info_str()"
 }
 
 ### in_git_clone()
@@ -66,9 +135,10 @@ t_is_git_clone() {
 t_check_for_changes() {
     SUITE="check_for_changes()"
     run_t success_if_no_local_changes
-    run_t skip_local_check_if_devmode
+    run_t skip_check_if_devmode
     run_t error_if_existing_file_changed
     run_t no_error_if_file_added
+    run_t error_checking_if_not_a_git_dir
 }
 
 ### sha_in_origin
@@ -83,7 +153,8 @@ t_git_vars_on_master() {
     local rc=0
     local repo=/var/tmp/repo_${FUNCNAME[0]}
     local u="$_USER" e="$_EMAIL"
-    local patt="^<master><$T_REPO><\w{$GIT_SHA_LEN}><NO_GIT_TAG><$u><$e><$u $e>$"
+    local git_info="repo:$T_REPO sha1:\w{$GIT_SHA_LEN} tag:-no tag- branch:master"
+    local patt="^<master><$T_REPO><\w{$GIT_SHA_LEN}><><$u><$e><$u $e><$git_info>$" # tag is empty
     repo_for_test $repo
 
     (
@@ -92,7 +163,7 @@ t_git_vars_on_master() {
 
         git_vars
 
-        str="<$GIT_BRANCH><$GIT_REPO><$GIT_SHA><$GIT_TAG><$GIT_USER><$GIT_EMAIL><$GIT_ID>"
+        str="<$GIT_BRANCH><$GIT_REPO><$GIT_SHA><$GIT_TAG><$GIT_USER><$GIT_EMAIL><$GIT_ID><$GIT_INFO>"
         echo "$str" | grep -P "$patt" >/dev/null
     ) || rc=1
 
@@ -100,6 +171,8 @@ t_git_vars_on_master() {
     return $rc
 }
 
+# $GIT_BRANCH and GIT_TAG should both have values when
+# checked-out branch's current commit is tagged.
 t_git_vars_checked_out_branch_with_tag() {
     local rc=0
     local repo=/var/tmp/repo_${FUNCNAME[0]}
@@ -119,12 +192,13 @@ t_git_vars_checked_out_branch_with_tag() {
     return $rc
 }
 
+# $GIT_BRANCH should be empty when on a detached head
 t_git_vars_checked_out_detached_head_tag() {
     local rc=0
     local repo=/var/tmp/repo_${FUNCNAME[0]}
-    local patt=".*"
     local u="$_USER" e="$_EMAIL"
-    local patt="^<from-a-tag><$T_REPO><\w{$GIT_SHA_LEN}><new-tag><$u><$e><$u $e>$"
+    local git_info="repo:$T_REPO sha1:\w{$GIT_SHA_LEN} tag:new-tag branch:-no branch-"
+    local patt="^<><$T_REPO><\w{$GIT_SHA_LEN}><new-tag><$u><$e><$u $e><$git_info>$"
     repo_for_test $repo
 
     (
@@ -132,10 +206,8 @@ t_git_vars_checked_out_detached_head_tag() {
         ! new_tag >/dev/null 2>&1 && e "could not create new tag" && exit 1
         ! new_commit >/dev/null 2>&1 && e "could not create new commit" && exit 1
         git checkout new-tag >/dev/null 2>&1
-
         git_vars
-
-        str="<$GIT_BRANCH><$GIT_REPO><$GIT_SHA><$GIT_TAG><$GIT_USER><$GIT_EMAIL><$GIT_ID>"
+        str="<><$GIT_REPO><$GIT_SHA><$GIT_TAG><$GIT_USER><$GIT_EMAIL><$GIT_ID><$GIT_INFO>"
         echo "$str" | grep -P "$patt" >/dev/null
     ) || rc=1
 
@@ -151,7 +223,7 @@ t_GIT_INFO_is_sanitised() {
         GIT_SHA='!"£$%^&*()_>-+=<`\\|'
         GIT_TAG=1.3.9
         GIT_BRANCH=foo
-        git_info_vars
+        GIT_INFO=$(git_info_str)
         [[ "$GIT_INFO" == "$exp" ]] || exit 1
     )
 }
@@ -166,7 +238,7 @@ t_success_if_git_cloned() {
 }
 
 t_error_if_git_clone_dir_not_exist() {
-    is_git_clone /foo/bar 2>&1 | grep 'could not cd to /foo/bar' >/dev/null
+    is_git_clone /foo/bar 2>&1 | grep "couldn't cd to /foo/bar" >/dev/null
 }
 
 t_default_check_pwd_is_clone_if_no_arg() {
@@ -225,7 +297,7 @@ t_success_if_commit_in_origin() {
 
     (
         cd $repo
-        sha_in_origin $SECOND_SHA >/dev/null 2>&1 || exit 1
+        sha_in_origin $SECOND_SHA >/dev/null || exit 1
     ) ||  rc=1
 
     rm -rf $repo
@@ -258,7 +330,7 @@ t_success_if_no_local_changes() {
     return $rc
 }
 
-t_skip_local_check_if_devmode() {
+t_skip_check_if_devmode() {
     local rc=0
     local repo=/var/tmp/repo_${FUNCNAME[0]}
     repo_for_test $repo
@@ -294,7 +366,17 @@ t_no_error_if_file_added() {
     return $rc
 }
 
+t_error_checking_if_not_a_git_dir() {
+    local o=""
+    o=$(check_for_changes $L_NONREPO 2>&1)
+    [[ $? -ne 0 ]] || return 1 # check_for_changes should have returned fail
+    echo "$o" | grep "is not a git dir" >/dev/null || return 1
+    return 0
+}
+
 ! . t/functions.t && echo "ERROR $0: could not source functions.t" && exit 1
 source_src_and_deps "std/functions std/functions.log_msgs" || exit 1
 setup || exit 1
-run_all
+
+run $*
+

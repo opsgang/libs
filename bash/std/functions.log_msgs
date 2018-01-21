@@ -59,6 +59,27 @@ set_log_prefix() {
     fi
 }
 
+
+# @desc prints ERROR to STDERR, with context prefix and
+# stacktrace.
+#
+# Caller can pass multiple quoted strings as each line
+# of the error msg.
+# _\n_ within a str is also treated as newline.
+#
+# @example
+#    # script.sh
+#    some_func { e "... went wrong!\nBadly" "Really Badly." }
+#    some_func
+#
+#   # ... would print something like:
+#   # ERROR script.sh:some_func(): ... went wrong!
+#   # ERROR script.sh:some_func(): ... Badly
+#   # ERROR script.sh:some_func(): ... Really Badly.
+#   # ERROR script.sh:some_func(): TRACE:
+#   # ERROR script.sh:some_func(): some_func() (line 2)
+#   # ERROR script.sh:some_func():       main() (line 3)
+#
 e() {
     local IFS=''
     local pre="ERROR $(set_log_prefix)"
@@ -67,6 +88,19 @@ e() {
     done < <(echo -e "$*\n""TRACE:\n$(__stacktrace)")
 }
 
+# @desc prints INFO msg (STDOUT) with context prefix
+# Caller can pass multiple quoted strings as each line
+# of the msg.
+# _\n_ within a str is also treated as newline.
+#
+# @example
+#   i "msg line 1" "line 2\nline3"
+#
+#   # ... would print something like:
+#   # INFO script.sh:main(): ... msg line 1
+#   # INFO script.sh:main(): ... line 2
+#   # INFO script.sh:main(): ... line 3
+#
 i() {
     local IFS=''
     local pre="INFO $(set_log_prefix)"
@@ -75,6 +109,13 @@ i() {
     done < <(echo -e "$*")
 }
 
+# @desc prints DEBUG msg (STDOUT) with context prefix
+# Caller can pass multiple quoted strings as each line
+# of the msg.
+# _\n_ within a str is also treated as newline.
+#
+# @example
+#   d "msg line 1" "line 2\nline3"
 d() {
     [[ -z "$DEBUG" ]] && return 0
     local IFS=''
@@ -84,6 +125,7 @@ d() {
     done < <(echo -e "$*")
 }
 
+# @desc as with e(), but msg text is coloured
 red_e() {
     local IFS=''
     local pre="ERROR $(set_log_prefix)"
@@ -92,6 +134,7 @@ red_e() {
     done < <(echo -e "$*\n""TRACE:\n$(__stacktrace)")
 }
 
+# @desc as with i(), but msg text is highlighted
 bold_i() {
     local IFS=''
     local pre="INFO $(set_log_prefix)"
@@ -100,6 +143,7 @@ bold_i() {
     done < <(echo -e "$*")
 }
 
+# @desc as with i(), but msg text is coloured.
 yellow_i() {
     local IFS=''
     local pre="INFO $(set_log_prefix)"
@@ -108,6 +152,7 @@ yellow_i() {
     done < <(echo -e "$*")
 }
 
+# @desc as with i(), but msg text is coloured.
 green_i() {
     local IFS=''
     local pre="INFO $(set_log_prefix)"
@@ -116,6 +161,7 @@ green_i() {
     done < <(echo -e "$*")
 }
 
+# @desc as with i(), but msg text is coloured.
 blue_i() {
     local IFS=''
     local pre="INFO $(set_log_prefix)"

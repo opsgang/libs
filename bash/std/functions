@@ -1,11 +1,14 @@
 # vim: et sr sw=4 ts=4 smartindent syntax=sh:
-run_modes() {
-    if [[ ! -z "$DEBUG" ]]; then
-        i "... forcing VERBOSE as DEBUG on"
-        export VERBOSE="true"
-    fi
-}
-
+# @desc sources a list of files in to current env.
+#
+# If you have whitespace in your file names, that's your
+# own fault.
+#
+# @example
+#   source_files "./foo /bar/foo ../foo"
+#   # or ...
+#   source_files "./foo" "/bar/spaces\ in-name"
+#
 source_files() {
     local files="$*"
     local f="" rc=0
@@ -17,16 +20,17 @@ source_files() {
     return $rc
 }
 
-check_var_defined() {
-    local var_name="$1"
-    local var_val="${!var_name}"
-    if [[ -z $var_val ]]; then
-        return 1
-    else
-        return 0
-    fi
-}
-
+# @desc Checks a list of vars for undefined
+# or empty vals. 
+#
+# **Whitespace and _0_ are considered values.**
+#
+# Returns 1 if any are undefined or empty.
+#
+# @example
+#   # ... test to see $FOO and $BAR are non-empty.
+#   required_vars "FOO BAR" || exit 1
+#
 required_vars() {
     local rc=0
     local required_vars="$1"
@@ -42,6 +46,29 @@ required_vars() {
     return $rc
 }
 
+check_var_defined() {
+    local var_name="$1"
+    local var_val="${!var_name}"
+    if [[ -z $var_val ]]; then
+        return 1
+    else
+        return 0
+    fi
+}
+
+# @desc produces the SHELL-FORMAT arg suitable for
+# the `envsubst` cmd, from a list of var names.
+#
+# This is useful to tell envsubst not to replace shell vars
+# in a template str or file unless they are listed in the
+# SHELL-FORMAT.
+#
+# `man envsubst` for more info (part of _GNU gettext_ utils)
+#
+# @example
+#   # ... produces "${FOO} ${BAR}"
+#   str=envsubst_tokens_list "FOO BAR"
+#
 envsubst_tokens_list() {
     local tmpl_tokens="$1"
     local list=""
@@ -56,6 +83,9 @@ envsubst_tokens_list() {
     echo "$list"
 }
 
+# @desc creates random str of format <datetime>-<integer>-<integer>
+# Useful for docker container names (or suffixes) to "guarantee" uniqueness.
+#
 random_str() {
     date +"%Y%m%d%H%m%s-$(( $(shuf -i 1-999999 -n1) * $(shuf -i 1-999999 -n1) ))"
 }
