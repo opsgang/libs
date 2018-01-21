@@ -1,4 +1,7 @@
 # vim: et sr sw=2 ts=2 smartindent:
+#
+# Set to only build on release events and pull requests
+# in shippable console.
 language: none
 
 env:
@@ -8,8 +11,7 @@ env:
 build:
 
   ci:
-    - git branch ; git config --list ; export ;
-      sudo apt-get update && sudo apt-get install -y coreutils realpath ;
+    - sudo apt-get update && sudo apt-get install -y coreutils realpath ;
       cd bash ;
       echo "running tests for bash libs" ;
       rc=0 ;
@@ -23,8 +25,24 @@ build:
       [[ $rc -eq 0 ]]
 
   on_success:
-    - if [[ "$BRANCH" == "master" ]] && [[ "$IS_PULL_REQUEST" != "true" ]]; then
+    - if [[ "$IS_RELEASE" == "true" ]] && [[ "$GIT_TAG_NAME" =~ ^[0-9\.]+$ ]]; then
         echo "... would build some release assets if tagged" ;
+        echo "shippable vars:" ;
+        echo "BRANCH: $BRANCH"
+        echo "IS_PULL_REQUEST: $IS_PULL_REQUEST"
+        echo "IS_GIT_TAG : $IS_GIT_TAG"
+        echo "GIT_TAG_NAME: (only if tag or release event): $GIT_TAG_NAME"
+        echo "IS_RELEASE: $IS_RELEASE"
+        echo "RELEASE_NAME: $RELEASE_NAME"
+      else
+        echo "... not a release"
+        echo "shippable vars:" ;
+        echo "BRANCH: $BRANCH"
+        echo "IS_PULL_REQUEST: $IS_PULL_REQUEST"
+        echo "IS_GIT_TAG : $IS_GIT_TAG"
+        echo "GIT_TAG_NAME: (only if tag or release event): $GIT_TAG_NAME"
+        echo "IS_RELEASE: $IS_RELEASE"
+        echo "RELEASE_NAME: $RELEASE_NAME"
       fi
 
 integrations:
@@ -36,10 +54,7 @@ integrations:
     - integrationName: opsgang_slack_delivery
       type: slack
       recipients: "#delivery"
-      branches:
-        only:
-          - master
-      on_success: never
+      on_success: always
       on_failure: never
       on_pull_request: never
 
