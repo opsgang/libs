@@ -1,10 +1,6 @@
 # vim: et sr sw=2 ts=2 smartindent:
 language: none
 
-branches:
-  only:
-    - master
-
 env:
   global:
     - IMG="aws_env"
@@ -12,7 +8,8 @@ env:
 build:
 
   ci:
-    - sudo apt-get update && sudo apt-get install -y coreutils realpath ;
+    - git branch ; git config --list ; export ;
+      sudo apt-get update && sudo apt-get install -y coreutils realpath ;
       cd bash ;
       echo "running tests for bash libs" ;
       rc=0 ;
@@ -34,9 +31,6 @@ integrations:
   hub:
     - integrationName: opsgang_dockerhubreg
       type: dockerRegistryLogin
-      branches:
-        only:
-          - master
 
   notifications:
     - integrationName: opsgang_slack_delivery
@@ -45,7 +39,7 @@ integrations:
       branches:
         only:
           - master
-      on_success: always
+      on_success: never
       on_failure: never
       on_pull_request: never
 
