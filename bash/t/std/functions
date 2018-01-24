@@ -41,6 +41,75 @@ t_random_str() {
     run_t check_random_str_func_exists
 }
 
+### semver_a_ge_b()
+t_semver_a_ge_b() {
+    SUITE="semver_a_ge_b"
+    run_t success_if_a_gt_b
+    run_t success_if_a_eq_b
+    run_t works_with_leading_v
+    run_t works_with_leading_V
+    run_t success_if_greater_prerel
+    run_t fail_if_prerel
+    run_t succeed_if_newer_prerel
+    run_t succeed_if_newer_prerel_build
+    run_t fail_if_a_lt_b
+    run_t fail_if_a_not_semver
+    run_t fail_if_b_not_semver
+    run_t t_fail_if_b_is_empty
+}
+
+t_success_if_a_gt_b() {
+    semver_a_ge_b "1.0.0" "0.1.0" \
+    && semver_a_ge_b "11.0.0" "9.15.0"
+}
+
+t_success_if_a_eq_b() {
+    semver_a_ge_b "1.0.0" "1.0.0"
+}
+
+t_works_with_leading_v() {
+    semver_a_ge_b "v0.2.0" "V0.2.0"
+}
+
+t_works_with_leading_V() {
+    semver_a_ge_b "V0.2.0" "v0.2.0"
+}
+
+t_success_if_greater_prerel() {
+    semver_a_ge_b "0.2.1-alpha" "v0.2.0"
+}
+
+t_fail_if_prerel() {
+    ! semver_a_ge_b "v0.2.1-alpha" "V0.2.1"
+}
+
+t_succeed_if_newer_prerel() {
+    semver_a_ge_b "1.2.0-beta" "v1.2.0-alpha"
+}
+
+t_succeed_if_newer_prerel_build() {
+    semver_a_ge_b "1.2.0-beta.10" "1.2.0-beta.1+1a"
+}
+
+t_fail_if_a_lt_b() {
+    ! semver_a_ge_b "0.0.1000" "9.0.0"
+}
+
+t_fail_if_a_not_semver() {
+    semver_a_ge_b "not-semver0.0.1000" "9.0.0" 2>/dev/null
+    [[ $? -eq 2 ]]
+}
+
+t_fail_if_b_not_semver() {
+    semver_a_ge_b "0.0.1" "not-semver-9.0.0" 2>/dev/null
+    [[ $? -eq 2 ]]
+}
+
+t_fail_if_b_is_empty() {
+    semver_a_ge_b "not-semver0.0.1000" "" 2>/dev/null
+    [[ $? -eq 2 ]]
+}
+
 t_create_list_of_tokens() {
     local tokens="apple banana carrot"
     local expected='${apple} ${banana} ${carrot}'

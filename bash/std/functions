@@ -96,7 +96,11 @@ random_str() {
 }
 
 # @desc compares 2 semver strs and returns success if arg1 is >= arg2.
-#   Any leading 'v' is stripped before comparison.
+#
+# Any leading 'v' is stripped before comparison.
+# Works with prerelease and metadata info.
+#
+# _Returns 2 on arg err_
 #
 # @example
 #   semver_a_ge_b 0.100.10 0.10.10 # true (as v 0.100 is greater than v0.10)
@@ -104,14 +108,45 @@ random_str() {
 #   semver_a_ge_b 0.99.0 0.99.0    # true (as args are the same)
 #
 #   semver_a_ge_b v0.99.0 0.99.0   # true (as args are the same, ignoring the leading v)
+#
+#   semver_a_ge_b 0.0.1-beta V0.99.0-alpha # true (as beta beats alpha)
+#
 semver_a_ge_b() {
     local a="$1"
     local b="$2"
-    local p='^[0-9]+\.[0-9]+\.[0-9]+(-.+)?$'
-    ! [[ "$a" =~ $p ]] && e "... expects 2 semver strs as params" && return 1
-    ! [[ "$b" =~ $p ]] && e "... expects 2 semver strs as params" && return 1
+    local va="${1##[vV]}" ; va="${va%%-*}" # strip leading v and any prerelease info etc
+    local vb="${2##[vV]}" ; vb="${vb%%-*}" # strip leading v and any prerelease info etc
 
-    [[ $(echo -e "$a\n$b" | sort -V | head -n 1) != "$a" ]]
+    local p='^[vV]?[0-9]+\.[0-9]+\.[0-9]+(-.+)?$'
+    ! [[ "$a" =~ $p ]] && e "... expects 2 semver strs as params" && return 2
+    ! [[ "$b" =~ $p ]] && e "... expects 2 semver strs as params" && return 2
+
+    # prerelease versions have a lower precedence than normal
+    # so if x.y.z are same for each, but one is a prerelease, it is less.
+    # if x.y.z are same but both are prereleases, normal comparison.
+    if [[ "$va" == "$vb" ]] && [[ "$a$b" =~ \- ]]; then
+
+        if [[ "$a" =~ \- ]] && [[ "$b" =~ \- ]]; then
+
+            # ... both are prerelease, just compare originals with out leading vVs
+            _semver_a_gt_b ${a##[vV]} ${b##[vV]}
+            return $?
+
+        elif [[ "$a" =~ \- ]] ; then
+            return 1
+        else
+            return 0
+        fi
+    fi
+
+    _semver_a_gt_b $va $vb
+
+}
+
+_semver_a_gt_b() {
+    local a=$1
+    local b=$2
+    [[ "$a" == "$b" ]] || [[ $(echo -e "$a\n$b" | sort -V | head -n 1) != "$a" ]]
 }
 
 #####################################################################

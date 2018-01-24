@@ -85,7 +85,11 @@ Useful for docker container names (or suffixes) to "guarantee" uniqueness.
 ### semver\_a\_ge\_b()
 
 compares 2 semver strs and returns success if arg1 is >= arg2.
-  Any leading 'v' is stripped before comparison.
+
+Any leading 'v' is stripped before comparison.
+Works with prerelease and metadata info.
+
+_Returns 2 on arg err_
 
 #### Example
 
@@ -95,6 +99,9 @@ semver_a_ge_b 0.100.10 0.10.10 # true (as v 0.100 is greater than v0.10)
 semver_a_ge_b 0.99.0 0.99.0    # true (as args are the same)
 
 semver_a_ge_b v0.99.0 0.99.0   # true (as args are the same, ignoring the leading v)
+
+semver_a_ge_b 0.0.1-beta V0.99.0-alpha # true (as beta beats alpha)
+
 ```
 
 ## LOG MESSAGE FUNCTIONS
