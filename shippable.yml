@@ -25,25 +25,11 @@ build:
       [[ $rc -eq 0 ]]
 
   on_success:
-    - if [[ "$IS_GIT_TAG" == "true" ]] && [[ "$GIT_TAG_NAME" =~ ^[0-9\.]+$ ]]; then
-        sudo wget -O /var/tmp/ghr.zip "$GHR" || rc=1;
-        echo "... would build a release and upload artefacts" ;
-        echo "shippable vars:" ;
-        echo "BRANCH: $BRANCH" ;
-        echo "IS_PULL_REQUEST: $IS_PULL_REQUEST" ;
-        echo "IS_GIT_TAG : $IS_GIT_TAG" ;
-        echo "GIT_TAG_NAME: (only if tag or release event): $GIT_TAG_NAME" ;
-        echo "IS_RELEASE: $IS_RELEASE" ;
-        echo "RELEASE_NAME: $RELEASE_NAME" ;
+    - if [[ "$IS_GIT_TAG" == "true" ]] || [[ "$IS_RELEASE" == "true" ]]; then
+        sudo wget -O /var/tmp/ghr.zip "$GHR" || rc=1 ;
+        echo "would build a release using $GIT_TAG_NAME" ;
       else
         echo "... not a release" ;
-        echo "shippable vars:" ;
-        echo "BRANCH: $BRANCH" ;
-        echo "IS_PULL_REQUEST: $IS_PULL_REQUEST" ;
-        echo "IS_GIT_TAG : $IS_GIT_TAG" ;
-        echo "GIT_TAG_NAME: (only if tag or release event): $GIT_TAG_NAME" ;
-        echo "IS_RELEASE: $IS_RELEASE" ;
-        echo "RELEASE_NAME: $RELEASE_NAME" ;
       fi ;
       [[ $rc -eq 0 ]]
 
