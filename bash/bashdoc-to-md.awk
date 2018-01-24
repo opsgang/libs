@@ -15,11 +15,14 @@ BEGIN {
         style = "github"
     }
 
-    styles["h1", "from"]   = ".*"
-    styles["h1", "to"]     = "## &"
-
     styles["h2", "from"]   = ".*"
-    styles["h2", "to"]     = "### &"
+    styles["h2", "to"]     = "## &"
+
+    styles["h3", "from"]   = ".*"
+    styles["h3", "to"]     = "### &"
+
+    styles["h4", "from"]   = ".*"
+    styles["h4", "to"]     = "#### &"
 
     styles["code", "from"] = ".*"
     styles["code", "to"]   = "```&"
@@ -98,6 +101,15 @@ in_desc {
     }
 }
 
+/^# @section/ {
+
+        sub(/^# @section /, "")
+
+        toc = toc "\n## " $0 "\n---"
+
+        doc = doc "\n## " $0 "\n---" 
+}
+
 in_example {
     if (! /^#/) {
         in_example = 0
@@ -113,7 +125,7 @@ in_example {
 /^# @example/ {
     in_example = 1
 
-    docblock = docblock "\n" strip_md(render("h2", "Example"))
+    docblock = docblock "\n" strip_md(render("h4", "Example"))
     docblock = docblock "\n\n" strip_md(render("code", "bash"))
 }
 
@@ -122,7 +134,7 @@ in_example {
     name = $1
     gsub(/_/, "\\_", name)
 
-    doc = doc "\n" strip_md(render("h1", name)) "\n" docblock
+    doc = doc "\n" strip_md(render("h3", name)) "\n" docblock
 
     url = name
     gsub(/\W/, "", url)
@@ -134,14 +146,14 @@ in_example {
 
 END {
     if (vardoc) {
-        vardoc = "## GLOBALS\n" vardoc "\n"
+        vardoc = "# GLOBALS\n" vardoc "\n"
     }
     fn = FILENAME
     sub(/^\.\//, "", fn)
     gsub(/_/, "\\_", fn)
     print "# " fn "\n" "---"
     print vardoc
-    print "## Functions"
+    print "# Functions"
     print toc
     print "\n---"
     print doc

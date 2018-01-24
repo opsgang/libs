@@ -10,108 +10,6 @@
 GIT="${GIT:-git --no-pager}"
 GIT_SHA_LEN=${GIT_SHA_LEN:-8}
 
-# @desc checks a dir (defaults to current dir) for git changes.
-# Returns 1 if there are uncommitted git changes.
-# User can pass the dir path as an arg.
-# If not the current dir is checked.
-#
-# If $DEVMODE is non-empty, the check will be skipped.
-#
-# @example
-#   check_for_changes "/in/my/cloned/dir" || exit 1
-#
-#   # ... skip check for now, I'm engineering ...
-#   DEVMODE=true check_for_changes "/some/dir"
-#
-check_for_changes() {
-    local d="$1"
-    i "... checking for uncommitted changes in $d"
-    [[ ! -z "${DEVMODE}" ]] && yellow_i "DEVMODE - skipping" && return 0;
-
-    (
-        __cd $d || exit 1
-
-        ! is_git_clone && red_e "$(pwd) is not a git dir" && return 1;
-        if git diff-index --quiet HEAD --
-        then
-            i "... none found."
-        else
-            msg="... local changes in $(pwd)"
-            msg="$msg\n... Commit them (tag the commit if wanted) then run this."
-            red_e "$msg"
-            exit 1
-        fi
-    ) || return 1
-}
-
-# @desc makes sure a git commit exists in the remote origin.
-# Returns 1 if commit does not exist.
-#
-# Defaults to using the value of $GIT_SHA, or else the
-# current dir's HEAD sha1.
-#
-# If $DEVMODE is non-empty, the check will be skipped.
-#
-# This is useful when you're developing code and don't
-# care that the code changes are not yet in the remote.
-#
-# @example
-#   # sha1 438704b exists in origin?
-#   sha_in_origin 438704b || exit 1
-#
-#   # val of $GIT_SHA is in origin?
-#   GIT_SHA=438704b sha_in_origin || exit 1
-#
-#   # ... current dir's HEAD sha1 exists in origin?
-#   sha_in_origin || exit 1
-#
-#   # ... skip check for now, I'm engineering ...
-#   DEVMODE=true sha_in_origin
-#
-sha_in_origin() {
-    local sha=${1:-${GIT_SHA:-$(git_sha)}}
-    i "... checking git sha $sha exists in origin"
-
-    if [[ -z "${sha}" ]]; then
-        red_e "no git_sha passed as param, or \$GIT_SHA or sha of current dir."
-        return 1
-    fi
-
-    [[ ! -z "${DEVMODE}" ]] && yellow_i "DEVMODE - skipping" && return 0
-
-    (
-        if ! git branch -r --contains ${sha} >/dev/null 2>&1
-        then
-            red_e "This commit ($sha) does not exist on origin."
-            red_e "Did you push these changes?"
-            exit 1
-        else
-            i "... all looking copacetic."
-        fi
-    ) || return 1
-}
-
-# @desc Tests whether a path is inside a git-cloned dir
-# Returns 1 if not.
-#
-# User can pass path to test as arg. Defaults to current dir.
-#
-# @example
-#
-#   is_git_clone || exit 1 # current dir is in a git clone?
-#
-#   is_git_clone /my/project/file || exit 1 # is file inside a git clone?
-#
-is_git_clone() {
-    local rc=0
-    local d="$1"
-    (
-        __cd $d || exit 1
-        git --no-pager rev-parse --is-inside-work-tree >/dev/null 2>&1
-    ) || rc=1
-    return $rc
-}
-
 # __cd() - if user passed a path, cd to it.
 __cd() {
     local d="$1"
@@ -119,7 +17,11 @@ __cd() {
     return 0
 }
 
-# @desc Prints branch name unless you've checked out a tag.
+###############################################################
+# @section GIT INFO FUNCTIONS
+###############################################################
+
+# @desc Prints branch name (or nothing if you've checked out a tag).
 # Returns 1 if current working dir is not in a git repo.
 git_branch() {
     r=$(${GIT} rev-parse --abbrev-ref HEAD)
@@ -245,3 +147,110 @@ git_vars() {
     export GIT_INFO=$(_git_info_str "$GIT_REPO" "$GIT_SHA" "$GIT_TAG" "$GIT_BRANCH")
 
 }
+
+###############################################################
+# @section VALIDATION FUNCTIONS
+###############################################################
+
+# @desc checks a dir (defaults to current dir) for git changes.
+# Returns 1 if there are uncommitted git changes.
+# User can pass the dir path as an arg.
+# If not the current dir is checked.
+#
+# If $DEVMODE is non-empty, the check will be skipped.
+#
+# @example
+#   check_for_changes "/in/my/cloned/dir" || exit 1
+#
+#   # ... skip check for now, I'm engineering ...
+#   DEVMODE=true check_for_changes "/some/dir"
+#
+check_for_changes() {
+    local d="$1"
+    i "... checking for uncommitted changes in $d"
+    [[ ! -z "${DEVMODE}" ]] && yellow_i "DEVMODE - skipping" && return 0;
+
+    (
+        __cd $d || exit 1
+
+        ! is_git_clone && red_e "$(pwd) is not a git dir" && return 1;
+        if git diff-index --quiet HEAD --
+        then
+            i "... none found."
+        else
+            msg="... local changes in $(pwd)"
+            msg="$msg\n... Commit them (tag the commit if wanted) then run this."
+            red_e "$msg"
+            exit 1
+        fi
+    ) || return 1
+}
+
+# @desc makes sure a git commit exists in the remote origin.
+# Returns 1 if commit does not exist.
+#
+# Defaults to using the value of $GIT_SHA, or else the
+# current dir's HEAD sha1.
+#
+# If $DEVMODE is non-empty, the check will be skipped.
+#
+# This is useful when you're developing code and don't
+# care that the code changes are not yet in the remote.
+#
+# @example
+#   # sha1 438704b exists in origin?
+#   sha_in_origin 438704b || exit 1
+#
+#   # val of $GIT_SHA is in origin?
+#   GIT_SHA=438704b sha_in_origin || exit 1
+#
+#   # ... current dir's HEAD sha1 exists in origin?
+#   sha_in_origin || exit 1
+#
+#   # ... skip check for now, I'm engineering ...
+#   DEVMODE=true sha_in_origin
+#
+sha_in_origin() {
+    local sha=${1:-${GIT_SHA:-$(git_sha)}}
+    i "... checking git sha $sha exists in origin"
+
+    if [[ -z "${sha}" ]]; then
+        red_e "no git_sha passed as param, or \$GIT_SHA or sha of current dir."
+        return 1
+    fi
+
+    [[ ! -z "${DEVMODE}" ]] && yellow_i "DEVMODE - skipping" && return 0
+
+    (
+        if ! git branch -r --contains ${sha} >/dev/null 2>&1
+        then
+            red_e "This commit ($sha) does not exist on origin."
+            red_e "Did you push these changes?"
+            exit 1
+        else
+            i "... all looking copacetic."
+        fi
+    ) || return 1
+}
+
+# @desc Tests whether a path is inside a git-cloned dir
+# Returns 1 if not.
+#
+# User can pass path to test as arg. Defaults to current dir.
+#
+# @example
+#
+#   is_git_clone || exit 1 # current dir is in a git clone?
+#
+#   is_git_clone /my/project/file || exit 1 # is file inside a git clone?
+#
+is_git_clone() {
+    local rc=0
+    local d="$1"
+    (
+        __cd $d || exit 1
+        git --no-pager rev-parse --is-inside-work-tree >/dev/null 2>&1
+    ) || rc=1
+    return $rc
+}
+
