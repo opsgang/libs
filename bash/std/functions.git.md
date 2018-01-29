@@ -26,6 +26,7 @@
 * [git\_vars()](#git_vars)
 ## VALIDATION FUNCTIONS
 ---
+* [no\_unpushed\_changes()](#no_unpushed_changes)
 * [check\_for\_changes()](#check_for_changes)
 * [sha\_in\_origin()](#sha_in_origin)
 * [is\_git\_clone()](#is_git_clone)
@@ -109,22 +110,37 @@ echo "I am in a local clone of $GIT_REPO on branch $GIT_BRANCH"
 
 ## VALIDATION FUNCTIONS
 ---
+### no\_unpushed\_changes()
+
+runs [check\_for\_changes](#check_for_changes) and 
+[sha_in_origin](#sha_in_origin) for **current dir**.
+
+If $DEVMODE is non-empty, the checks will be skipped.
+
+#### Example
+
+```bash
+# ... check whether what I'm deploying is reproducible
+no_unpushed_changes || exit 1
+
+# ... skip checks for now, I'm engineering ...
+DEVMODE=true no_unpushed_changes || exit 1
+
+```
+
 ### check\_for\_changes()
 
 checks a dir (defaults to current dir) for git changes.
+
 Returns 1 if there are uncommitted git changes.
+
 User can pass the dir path as an arg.
 If not the current dir is checked.
-
-If $DEVMODE is non-empty, the check will be skipped.
 
 #### Example
 
 ```bash
 check_for_changes "/in/my/cloned/dir" || exit 1
-
-# ... skip check for now, I'm engineering ...
-DEVMODE=true check_for_changes "/some/dir"
 
 ```
 
@@ -135,11 +151,6 @@ Returns 1 if commit does not exist.
 
 Defaults to using the value of $GIT_SHA, or else the
 current dir's HEAD sha1.
-
-If $DEVMODE is non-empty, the check will be skipped.
-
-This is useful when you're developing code and don't
-care that the code changes are not yet in the remote.
 
 #### Example
 
@@ -152,9 +163,6 @@ GIT_SHA=438704b sha_in_origin || exit 1
 
 # ... current dir's HEAD sha1 exists in origin?
 sha_in_origin || exit 1
-
-# ... skip check for now, I'm engineering ...
-DEVMODE=true sha_in_origin
 
 ```
 
