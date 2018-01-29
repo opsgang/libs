@@ -145,6 +145,8 @@ t_check_for_changes() {
 t_sha_in_origin() {
     SUITE="sha_in_origin()"
     run_t success_if_commit_in_origin
+    run_t fail_if_new_commit_not_in_origin
+    run_t fail_if_made_up_commit_not_in_origin
     run_t use_GIT_SHA_if_no_arg
     run_t use_current_sha_if_no_arg_or_GIT_SHA
 }
@@ -298,6 +300,37 @@ t_success_if_commit_in_origin() {
     (
         cd $repo
         sha_in_origin $SECOND_SHA >/dev/null || exit 1
+    ) ||  rc=1
+
+    rm -rf $repo
+    return $rc
+}
+
+t_fail_if_new_commit_not_in_origin() {
+    local rc=0
+    local repo=/var/tmp/repo_${FUNCNAME[0]}
+    repo_for_test $repo
+
+    (
+        cd $repo
+        ! new_commit >/dev/null 2>&1 && e "could not create new commit" && exit 1
+        sha_in_origin $(git rev-parse --verify HEAD) >/dev/null 2>&1 && exit 1 # should not be in origin
+        exit 0
+    ) ||  rc=1
+
+    rm -rf $repo
+    return $rc
+}
+
+t_fail_if_made_up_commit_not_in_origin() {
+    local rc=0
+    local repo=/var/tmp/repo_${FUNCNAME[0]}
+    repo_for_test $repo
+
+    (
+        cd $repo
+        sha_in_origin a6d9243 >/dev/null 2>&1 && exit 1 # should not be in origin
+        exit 0
     ) ||  rc=1
 
     rm -rf $repo
