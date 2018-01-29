@@ -92,7 +92,7 @@ git_info_str() {
         repo="$(git_repo)"
         sha="$(git_sha)"
         tag="$(git_tag)"
-        branch="$(git_branch)" || return 1
+        branch="$(git_branch)" || exit 1
 
         _git_info_str "$repo" "$sha" "$tag" "$branch"
 
@@ -152,6 +152,18 @@ git_vars() {
 # @section VALIDATION FUNCTIONS
 ###############################################################
 
+no_unpushed_changes() {
+    [[ ! -z "${DEVMODE}" ]] && yellow_i "DEVMODE - skipping git checks" && return 0;
+
+    local d=$(pwd)
+    local sha=$(git_sha)
+
+    check_for_changes "$d" || return 1
+    sha_in_origin "$sha" || return 1
+
+    return 0
+}
+
 # @desc checks a dir (defaults to current dir) for git changes.
 # Returns 1 if there are uncommitted git changes.
 # User can pass the dir path as an arg.
@@ -166,10 +178,8 @@ git_vars() {
 #   DEVMODE=true check_for_changes "/some/dir"
 #
 check_for_changes() {
-    local d="$1"
+    local d="${1:-$(pwd)}"
     i "... checking for uncommitted changes in $d"
-    [[ ! -z "${DEVMODE}" ]] && yellow_i "DEVMODE - skipping" && return 0;
-
     (
         __cd $d || exit 1
 
@@ -220,8 +230,6 @@ sha_in_origin() {
         red_e "no git_sha passed as param, or \$GIT_SHA or sha of current dir."
         return 1
     fi
-
-    [[ ! -z "${DEVMODE}" ]] && yellow_i "DEVMODE - skipping" && return 0
 
     b=$(git branch -r --contains ${sha} 2>/dev/null)
     if [[ $? -ne 0 ]] || [[ -z "$b" ]]; then
