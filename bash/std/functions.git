@@ -92,7 +92,7 @@ git_info_str() {
         repo="$(git_repo)"
         sha="$(git_sha)"
         tag="$(git_tag)"
-        branch="$(git_branch)" || return 1
+        branch="$(git_branch)" || exit 1
 
         _git_info_str "$repo" "$sha" "$tag" "$branch"
 
@@ -152,24 +152,43 @@ git_vars() {
 # @section VALIDATION FUNCTIONS
 ###############################################################
 
+# @desc runs [check\_for\_changes](#check_for_changes) and 
+# [sha_in_origin](#sha_in_origin) for **current dir**.
+#
+# If $DEVMODE is non-empty, the checks will be skipped.
+#
+# @example
+#   # ... check whether what I'm deploying is reproducible
+#   no_unpushed_changes || exit 1
+#
+#   # ... skip checks for now, I'm engineering ...
+#   DEVMODE=true no_unpushed_changes || exit 1
+#
+no_unpushed_changes() {
+    [[ ! -z "${DEVMODE}" ]] && yellow_i "DEVMODE - skipping git checks" && return 0;
+
+    local d=$(pwd)
+    local sha=$(git_sha)
+
+    check_for_changes "$d" || return 1
+    sha_in_origin "$sha" || return 1
+
+    return 0
+}
+
 # @desc checks a dir (defaults to current dir) for git changes.
+#
 # Returns 1 if there are uncommitted git changes.
+#
 # User can pass the dir path as an arg.
 # If not the current dir is checked.
-#
-# If $DEVMODE is non-empty, the check will be skipped.
 #
 # @example
 #   check_for_changes "/in/my/cloned/dir" || exit 1
 #
-#   # ... skip check for now, I'm engineering ...
-#   DEVMODE=true check_for_changes "/some/dir"
-#
 check_for_changes() {
-    local d="$1"
+    local d="${1:-$(pwd)}"
     i "... checking for uncommitted changes in $d"
-    [[ ! -z "${DEVMODE}" ]] && yellow_i "DEVMODE - skipping" && return 0;
-
     (
         __cd $d || exit 1
 
@@ -192,11 +211,6 @@ check_for_changes() {
 # Defaults to using the value of $GIT_SHA, or else the
 # current dir's HEAD sha1.
 #
-# If $DEVMODE is non-empty, the check will be skipped.
-#
-# This is useful when you're developing code and don't
-# care that the code changes are not yet in the remote.
-#
 # @example
 #   # sha1 438704b exists in origin?
 #   sha_in_origin 438704b || exit 1
@@ -206,9 +220,6 @@ check_for_changes() {
 #
 #   # ... current dir's HEAD sha1 exists in origin?
 #   sha_in_origin || exit 1
-#
-#   # ... skip check for now, I'm engineering ...
-#   DEVMODE=true sha_in_origin
 #
 sha_in_origin() {
     local sha=${1:-${GIT_SHA:-$(git_sha)}}
@@ -220,8 +231,6 @@ sha_in_origin() {
         red_e "no git_sha passed as param, or \$GIT_SHA or sha of current dir."
         return 1
     fi
-
-    [[ ! -z "${DEVMODE}" ]] && yellow_i "DEVMODE - skipping" && return 0
 
     b=$(git branch -r --contains ${sha} 2>/dev/null)
     if [[ $? -ne 0 ]] || [[ -z "$b" ]]; then

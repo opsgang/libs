@@ -100,7 +100,7 @@ semver_a_ge_b 0.99.0 0.99.0    # true (as args are the same)
 
 semver_a_ge_b v0.99.0 0.99.0   # true (as args are the same, ignoring the leading v)
 
-semver_a_ge_b 0.0.1-beta V0.99.0-alpha # true (as beta beats alpha)
+semver_a_ge_b 0.99.0-beta V0.99.0-alpha # true (as beta beats alpha)
 
 ```
 

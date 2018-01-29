@@ -3,7 +3,7 @@ FAILURES=""
 SRC="${0##t/}"
 
 run_t() {
-    local func="$1"
+    local func="${1#t_}"
     local pad=""
     local desc="$func"
     local t_func="t_$func"

@@ -9,52 +9,52 @@ EXPECTED_DEBUG_PREFIX="$(realpath -- $0)" # horrid, but no better way
 
 t_source_files() {
     SUITE="source_files()"
-    run_t will_error_if_file_can_not_be_sourced
-    run_t can_source_multiple_files
+    run_t t_will_error_if_file_can_not_be_sourced
+    run_t t_can_source_multiple_files
 }
 
 ### check_var_defined
 t_check_var_defined() {
     SUITE="check_var_defined()"
-    run_t non_empty_var_is_success
-    run_t unset_var_is_error
-    run_t empty_var_is_error
+    run_t t_non_empty_var_is_success
+    run_t t_unset_var_is_error
+    run_t t_empty_var_is_error
 }
 
 ### required_vars()
 t_required_vars() {
     SUITE="required_vars()"
-    run_t success_if_all_vars_defined
-    run_t error_if_any_vars_missing
+    run_t t_success_if_all_vars_defined
+    run_t t_error_if_any_vars_missing
 }
 
 ### envsubst_tokens_list()
 t_envsubst_tokens_list() {
     SUITE="envsubst_tokens_list"
-    run_t create_list_of_tokens
+    run_t t_create_list_of_tokens
 }
 
 ### random_str()
 # just make sure function exists - can't easily verify randomness!
 t_random_str() {
     SUITE="random_str()"
-    run_t check_random_str_func_exists
+    run_t t_check_random_str_func_exists
 }
 
 ### semver_a_ge_b()
 t_semver_a_ge_b() {
     SUITE="semver_a_ge_b"
-    run_t success_if_a_gt_b
-    run_t success_if_a_eq_b
-    run_t works_with_leading_v
-    run_t works_with_leading_V
-    run_t success_if_greater_prerel
-    run_t fail_if_prerel
-    run_t succeed_if_newer_prerel
-    run_t succeed_if_newer_prerel_build
-    run_t fail_if_a_lt_b
-    run_t fail_if_a_not_semver
-    run_t fail_if_b_not_semver
+    run_t t_success_if_a_gt_b
+    run_t t_success_if_a_eq_b
+    run_t t_works_with_leading_v
+    run_t t_works_with_leading_V
+    run_t t_success_if_greater_prerel
+    run_t t_fail_if_prerel
+    run_t t_succeed_if_newer_prerel
+    run_t t_succeed_if_newer_prerel_build
+    run_t t_fail_if_a_lt_b
+    run_t t_fail_if_a_not_semver
+    run_t t_fail_if_b_not_semver
     run_t t_fail_if_b_is_empty
 }
 
@@ -177,18 +177,18 @@ t_will_error_if_file_can_not_be_sourced() {
 # so we get the EXPECTED_PREFIX or EXPECTED_DEBUG_PREFIX
 t_set_log_prefix() {
     SUITE='set_log_prefix()'
-    run_t prefix_when_run_from_script
-    run_t prefix_when_run_in_shell
-    run_t prefix_when_run_from_script_with_debug
-    run_t prefix_when_run_in_subshell
-    run_t prefix_when_run_in_sourced_file
+    run_t t_prefix_when_run_from_script
+    run_t t_prefix_when_run_in_shell
+    run_t t_prefix_when_run_from_script_with_debug
+    run_t t_prefix_when_run_in_subshell
+    run_t t_prefix_when_run_in_sourced_file
 }
 
 ### d()
 t_d() {
     SUITE='d()'
-    run_t no_output_if_DEBUG_not_set
-    run_t output_if_debug_set
+    run_t t_no_output_if_DEBUG_not_set
+    run_t t_output_if_debug_set
 }
 
 ### __stacktrace()

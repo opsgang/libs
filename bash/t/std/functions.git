@@ -59,9 +59,54 @@ checkout_tag() {
 ### git_branch()
 t_git_branch() {
     SUITE="git_branch()"
-    run_t error_if_not_a_git_dir
-    run_t if_head_commit_tagged_still_show_branch
-    run_t if_checkout_tag_show_from_a_tag
+    run_t t_error_if_not_a_git_dir
+    run_t t_if_head_commit_tagged_still_show_branch
+    run_t t_if_checkout_tag_show_from_a_tag
+}
+
+### git_vars()
+t_git_vars() {
+    SUITE="git_vars()"
+    run_t t_git_vars_on_master
+    run_t t_git_vars_checked_out_branch_with_tag
+    run_t t_git_vars_checked_out_detached_head_tag
+}
+### git_info_str()
+t_git_info_str() {
+    SUITE="git_info_str()"
+}
+
+### in_git_clone()
+t_is_git_clone() {
+    SUITE="is_git_clone()"
+    run_t t_success_if_git_cloned
+    run_t t_default_check_pwd_is_clone_if_no_arg
+    run_t t_error_if_git_clone_dir_not_exist
+}
+
+### no_unpushed_changes
+t_no_unpushed_changes() {
+    SUITE="no_unpushed_changes"
+    run_t t_skip_check_if_devmode
+}
+
+### check_for_changes
+t_check_for_changes() {
+    SUITE="check_for_changes()"
+    run_t t_success_if_no_local_changes
+    run_t t_error_if_existing_file_changed
+    run_t t_no_error_if_file_added
+    run_t t_error_checking_if_not_a_git_dir
+}
+
+### sha_in_origin
+t_sha_in_origin() {
+    SUITE="sha_in_origin()"
+    run_t t_success_if_commit_in_origin
+    run_t t_fail_if_new_commit_not_in_origin
+    run_t t_fail_if_made_up_commit_not_in_origin
+    run_t t_use_GIT_SHA_if_no_arg
+    run_t t_use_current_sha_if_no_arg_or_GIT_SHA
 }
 
 t_error_if_not_a_git_dir() {
@@ -109,46 +154,6 @@ t_if_checkout_tag_show_from_a_tag() {
 
     rm -rf $repo
     return $rc
-}
-
-### git_vars()
-t_git_vars() {
-    SUITE="git_vars()"
-    run_t git_vars_on_master
-    run_t git_vars_checked_out_branch_with_tag
-    run_t git_vars_checked_out_detached_head_tag
-}
-### git_info_str()
-t_git_info_str() {
-    SUITE="git_info_str()"
-}
-
-### in_git_clone()
-t_is_git_clone() {
-    SUITE="is_git_clone()"
-    run_t success_if_git_cloned
-    run_t default_check_pwd_is_clone_if_no_arg
-    run_t error_if_git_clone_dir_not_exist
-}
-
-### check_for_changes
-t_check_for_changes() {
-    SUITE="check_for_changes()"
-    run_t success_if_no_local_changes
-    run_t skip_check_if_devmode
-    run_t error_if_existing_file_changed
-    run_t no_error_if_file_added
-    run_t error_checking_if_not_a_git_dir
-}
-
-### sha_in_origin
-t_sha_in_origin() {
-    SUITE="sha_in_origin()"
-    run_t success_if_commit_in_origin
-    run_t fail_if_new_commit_not_in_origin
-    run_t fail_if_made_up_commit_not_in_origin
-    run_t use_GIT_SHA_if_no_arg
-    run_t use_current_sha_if_no_arg_or_GIT_SHA
 }
 
 t_git_vars_on_master() {
@@ -257,23 +262,6 @@ t_default_check_pwd_is_clone_if_no_arg() {
     return $rc
 }
 
-t_skip_origin_check_if_devmode() {
-    local rc=0
-    local repo=/var/tmp/repo_${FUNCNAME[0]}
-    repo_for_test $repo
-
-    (
-        lrc=0
-        cd $repo
-        local o=$(DEVMODE=true sha_in_origin 2>&1) || lrc=1
-        echo "$o" | grep -P 'DEVMODE.* - skipping' >/dev/null || lrc=1
-        exit $lrc
-    ) || rc=1
-
-    rm -rf $repo
-    return $rc
-}
-
 t_use_current_sha_if_no_arg_or_GIT_SHA() {
     local rc=0
     local repo=/var/tmp/repo_${FUNCNAME[0]}
@@ -368,7 +356,7 @@ t_skip_check_if_devmode() {
     local repo=/var/tmp/repo_${FUNCNAME[0]}
     repo_for_test $repo
 
-    local o=$(DEVMODE=true check_for_changes $repo 2>&1) || rc=1
+    local o=$(DEVMODE=true no_unpushed_changes 2>&1) || rc=1
     echo "$o" | grep -P 'DEVMODE.* - skipping' >/dev/null || rc=1
 
     rm -rf $repo
