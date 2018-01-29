@@ -212,6 +212,8 @@ check_for_changes() {
 #
 sha_in_origin() {
     local sha=${1:-${GIT_SHA:-$(git_sha)}}
+    local b=""
+
     i "... checking git sha $sha exists in origin"
 
     if [[ -z "${sha}" ]]; then
@@ -221,16 +223,15 @@ sha_in_origin() {
 
     [[ ! -z "${DEVMODE}" ]] && yellow_i "DEVMODE - skipping" && return 0
 
-    (
-        if ! git branch -r --contains ${sha} >/dev/null 2>&1
-        then
-            red_e "This commit ($sha) does not exist on origin."
-            red_e "Did you push these changes?"
-            exit 1
-        else
-            i "... all looking copacetic."
-        fi
-    ) || return 1
+    b=$(git branch -r --contains ${sha} 2>/dev/null)
+    if [[ $? -ne 0 ]] || [[ -z "$b" ]]; then
+        red_e "This commit ($sha) does not exist on origin."
+        red_e "Did you push these changes?"
+        return 1
+    else
+        i "... all looking copacetic."
+        return 0
+    fi
 }
 
 # @desc Tests whether a path is inside a git-cloned dir
