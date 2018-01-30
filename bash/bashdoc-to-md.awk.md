@@ -1,8 +1,31 @@
-# bashdoc-to-md.awk - simple bashdocs
+# simple bash docs - bashdoc-to-md.awk
 
 TL;DR? [Skip to the example](#example)
 
-## The Gist
+* [Get The Gist](#get-the-gist)
+
+* [Format Rules](#format-rules)
+
+    * [@section](#section-annotation)
+
+    * [function docco: @desc](#function-annotation-desc)
+
+    * [function docco: @example](#function-annotation-example)
+
+    * [global vars](#global-vars)
+
+* [Example](#example)
+
+    * [annotated script](#annotated-script)
+
+    * [rendered output](#rendered-output)
+
+    * [raw outpu](#raw-output)
+
+ EXAMPLE ANNOTATED SCRIPT
+   
+
+## Get The Gist
 
 H1 header automatically taken from file name.
 
@@ -20,7 +43,7 @@ Now see [the example](#example).
 
 ---
 
-## Valid Annotations
+## Format Rules
 
 ### section annotation
 
@@ -90,9 +113,11 @@ then the default is also documented.
 
 ## EXAMPLE
 
-Click [here](#rendered-example) to view rendered.
+Click [here](#rendered-output) to view rendered.
 
-Click [here](#raw-example) to view raw markdown.
+Click [here](#raw-output) to view raw markdown.
+
+### ANNOTATED SCRIPT
 
 ```bash
 # EXAMPLE: awk -f bashdoc-to-md my_funcs.sh
@@ -136,7 +161,7 @@ function bar() {
 }
 ```
 
-### RENDERED-EXAMPLE
+### RENDERED-OUTPUT
 
 # my\_funcs.sh
 ---
@@ -183,8 +208,12 @@ foo "hi!" # foo says hi!
 Spurious lesser func when you consider
 the glory of [foo()](#foo) <-- see this inline link.
 
+---
 
-### RAW-EXAMPLE
+**End of RENDERED-OUTPUT**
+
+
+### RAW-OUTPUT
 ```
 # my\_funcs.sh
 ---
@@ -232,3 +261,5 @@ Spurious lesser func when you consider
 the glory of [foo()](#foo) <-- see this inline link.
 
 ```
+
+**End of RAW-OUTPUT**
