@@ -7,7 +7,10 @@
 #    export GIT_INFO=$(echo ${RAW_GIT_INFO} | tr -c '[[:alnum:] _.:/=+-@\n]' '_')
 #    cd $_pwd
 
+# path to git binary
 GIT="${GIT:-git --no-pager}"
+
+# git sha1s will be truncated to this length
 GIT_SHA_LEN=${GIT_SHA_LEN:-8}
 
 # __cd() - if user passed a path, cd to it.

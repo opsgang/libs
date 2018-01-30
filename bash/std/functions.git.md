@@ -2,16 +2,16 @@
 ---
 # GLOBALS
 
-* `$GIT`
+* `$GIT`: _path to git binary_
     * reads env var `$GIT`
     * or default val: `git --no-pager`
 
-* `$GIT_SHA_LEN`
+* `$GIT_SHA_LEN`: _git sha1s will be truncated to this length_
     * reads env var `$GIT_SHA_LEN`
     * or default val: `8`
 
 
-# Functions
+# FUNCTIONS
 
 ## GIT INFO FUNCTIONS
 ---

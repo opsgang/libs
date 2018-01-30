@@ -1,7 +1,7 @@
 # std/functions
 ---
 
-# Functions
+# FUNCTIONS
 
 ## MISC. FUNCTIONS
 ---

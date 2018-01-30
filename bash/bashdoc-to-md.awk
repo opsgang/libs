@@ -5,11 +5,15 @@
 # Based heavily on https://github.com/reconquest/shdoc/blob/master/shdoc
 # by Stanislav Seletskiy
 #
-# Modified from that to
-#
 # - simplified to only handle @description and @example annotations.
+# - allows grouping of functions using @section delimiter.
 # - document global vars
-#
+#   - comment on line directly above var is assumed to be optional var desc.
+#   - str or default values taken from any assignment to var
+#     only accounts for:
+#       var="some str"    # val is 'some str'. Quotes are ignored. 
+#       var="${FOO}"      # val is ${FOO} from env
+#       var="${FOO:-bar}" # val is either ${FOO} or default 'bar'
 BEGIN {
     if (! style) {
         style = "github"
@@ -45,24 +49,37 @@ function strip_md(text) {
     return text
 }
 
+# global vars
 /^([A-Za-z][^=[:blank:]]*)=/ {
-    ln=$0
-    varname = $1
+    ln = $0
     val = $0
+    varname = $1
+    var_comment = ""
+    invar = ""
+    def = ""
+    defaults = ""
+
     sub(/=.*/, "", varname)
     sub(/[^=]+=/, "", val)
 
+    # ... get any default values for global var
     if (match(val, /\$\{.+}/)) {
         sub(/^["'\$\{]+/, "", val)
         sub(/["'\}]+$/, "", val)
 
-        invar = "" def = ""
         if (match(val, /:-/)) {
             invar = val
             def = val
             sub(/:-.*/, "", invar)
             sub(/^[^:]+:-/, "", def)
         }
+    }
+
+    # ... assume comment on previous line is var description
+    if (match(prev, /^# /)) {
+        sub(/^# /, "", prev)
+        gsub(/_/, "\\_", prev)
+        var_comment = prev
     }
 
     if (invar) {
@@ -72,14 +89,29 @@ function strip_md(text) {
         }
     }
     else if (val) {
-        defaults = ": value: `" val "`\n"
+        defaults = "    * value: `" val "`\n"
     }
     else {
-        defaults = ":_no value_\n"
+        defaults = "    * _no value_\n"
     }
 
-    vardoc = vardoc "\n* `\$" varname "`\n" defaults
+    if (var_comment) {
+        vardoc = vardoc "\n* `\$" varname "`: _" var_comment "_\n" defaults
+    }
+    else {
+        vardoc = vardoc "\n* `\$" varname "`\n" defaults
+    }
 
+
+} { 
+    prev=$0
+    def = ""
+    defaults = ""
+    invar = ""
+    ln = ""
+    val = ""
+    varname = ""
+    var_comment = ""
 }
 
 /^# @desc/ {
@@ -153,7 +185,7 @@ END {
     gsub(/_/, "\\_", fn)
     print "# " fn "\n" "---"
     print vardoc
-    print "# Functions"
+    print "# FUNCTIONS"
     print toc
     print "\n---"
     print doc
