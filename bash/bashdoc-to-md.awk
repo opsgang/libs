@@ -67,11 +67,18 @@ function strip_md(text) {
         sub(/^["'\$\{]+/, "", val)
         sub(/["'\}]+$/, "", val)
 
+        # ... if ${VAR:-default} style
         if (match(val, /:-/)) {
             invar = val
             def = val
             sub(/:-.*/, "", invar)
             sub(/^[^:]+:-/, "", def)
+            if (!def) {
+                def = "empty string"
+            }
+        }
+        else { # ... if ${VAR}
+            invar = val
         }
     }
 
