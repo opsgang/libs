@@ -121,16 +121,17 @@ Click [here](#raw-output) to view raw markdown.
 
 ```bash
 # EXAMPLE: awk -f bashdoc-to-md my_funcs.sh
-#<-- this hash is the 1st char column of file
 
-# ...global vars - this line is irrelevant for doc
+# GLOBAL VARS - this comment is irrelevant for doc
+# ... and so is this.
 
 # ... path to foo binary
 FOO=${FOO:-echo}
 
 BAR="some string"
 
-_IGNORED="this global is ignored as it starts with underscore"
+# only globals that start with [a-zA-Z] are documented.
+_IGNORED="var ignored for docs as name starts with underscore"
 
 # @section String Functions
 
@@ -146,6 +147,9 @@ foo() {
     $FOO "foo says $*"
 }
 
+# Only valid annotations or global vars trigger
+# action from bashdoc-to-md. 
+# So this comment block is ignored.
 ignored() {
     # bashdoc-to-md ignores this function because
     # there is no preceding @desc annotation.
