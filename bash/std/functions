@@ -61,6 +61,98 @@ check_var_defined() {
     fi
 }
 
+# @desc Prints a user-passed *single-line* str with all instances of certain chars
+# replaced by a safe character.
+#
+# *See examples  if you are working with UTF-8 wide-byte chars*
+#
+# Useful for creating vals that can be consumed by systemd environment AND sourced by a shell script
+# both of which treat quotes, whitespace and `$` signs differently.
+#
+# Or to create valid AWS tag values (there is a limited set of valid chars)
+#
+# * Arg 1: *single-line* str to transform
+#
+# * Arg 2: Optional: the replacement char, defaults to `_`
+#
+#       To use `]` and/or `[` in Arg 2, they must appear at start of pattern in that order
+#       (after any leading `!` if you want to specify a disallowed list)
+#
+#       To use `-` in Arg2, it MUST appear as the last char.
+#       You can use named POSIX character classes e.g. [:blank:] or [:alnum:].
+#
+# * Arg 3: Optional: the list of chars to keep (*or replace if prefixed with* `!`)
+#       To include a literal `!` in a list to replace, add another exclamation mark.
+#
+#       The default is strict, replacing all but alphanumerics and these chars:`_.:/=+-@`
+#
+# Call [safe_chars_def_list](#safe_chars_def_list) to get the default char list.
+#
+# @example
+#   # ... default
+#   #
+#   str_to_safe_chars 'from_repo:"git@github.com/me/foo"'
+#       # output: from_repo:_git@github.com/me/foo_
+#
+#   # ... handling UTF-8 (e.g using copyright char as replacement)
+#   # Ensure your shell's locale is set up for utf8 first ... e.g.
+#   loc=en_US.UTF-8 ; export LC_ALL="$loc" LC_CTYPE="$loc" LANG="$loc" LANGUAGE="$loc"
+#   str_to_safe_chars "-C-" "$(printf '\xC2\xA9')" '!C' # replace C with copyright symbol
+#
+#   # ... for safe AWS tag (transform same chars as default, but whitespace is fine)
+#   #
+#   str_to_safe_chars "from repo: <git@github.com/me/foo>" '_' "$(safe_chars_def_list)[:blank:]"
+#       # output: from repo:_git@github.com/me/foo_
+#
+#   # ... for val in systemd env file that can also be sourced by shell script
+#   #
+#   # so no backslash, `$`, backtick, whitespace,`"`, or `'`.
+#   #
+#   bad_chars='!\$`[:blank:]"'"'" # Note leading ! indicates list is of chars to replace
+#   str_to_safe_chars 'price (in $USD):"5.00"' '-' "$bad_chars"
+#       # output: price-(in--USD):-5.00-
+#
+#   # ... strip all non-alphanumerics except hyphens and underscores
+#   #
+#   str_to_safe_chars "from repo: <git@github.com/me/foo>" '_' '[:alnum:]_-'
+#       # output: from_repo__git_github_com_me_foo_
+#
+#
+str_to_safe_chars() {
+    local s="$1" # str to transform
+    local r="${2:-_}" # replacement char
+    local p="${3:-$(safe_chars_def_list)}" # allowed chars (or with leading ! disallowed)
+
+    [[ -z "$1" ]] && red_e "... you must pass a str to transform" && return 1
+    [[ "${#r}" -ne 1 ]] && red_e "... replacement must be one UTF-8 char, not '$r'" && return 1
+
+    local sed_class="[^$p]"
+    # if user passed a list of disallowed chars
+    if [[ "${p:0:1}" == "!" ]]; then
+        sed_class="[${p:1:${#p}}]"
+    fi
+
+    # GNU tr does not handle UTF8 correctly, so sed is used instead
+    # ... user may pass '/' to $r which would mess with default sed delimiter.
+    if [[ "$r" == '/' ]]; then
+        echo "$s" | sed -e "s#$sed_class#$r#g"
+    else
+        echo "$s" | sed -e "s/$sed_class/$r/g"
+    fi
+    if [[ $? -eq 0 ]]; then
+        return 0
+    else
+        e "... unable to make safe\nstr: $s\nreplacement char: $r\nchar list: $p\ncl:$sed_class"
+        return 1
+    fi
+}
+
+# @desc Prints default list of allowed chars for
+# [str_to_safe_chars()](#str_to_safe_chars)
+safe_chars_def_list() {
+    echo '[:alnum:]:_.=+@/-'
+}
+
 # @desc produces the SHELL-FORMAT arg suitable for
 # the `envsubst` cmd, from a list of var names.
 #
@@ -237,7 +329,11 @@ e() {
     local pre="ERROR $(set_log_prefix)"
     while read line ; do
         echo -e "$pre: $line" >&2
-    done < <(echo -e "$*\n""TRACE:\n$(__stacktrace)")
+    done < <(echo -e "$*\n")
+
+    while read line; do
+        echo -e "$pre: ${__TRED}$line${__TRESET}" >&2
+    done < <(echo -e "TRACE:\n$(__stacktrace)")
 }
 
 # @desc prints INFO msg (STDOUT) with context prefix
@@ -283,7 +379,11 @@ red_e() {
     local pre="ERROR $(set_log_prefix)"
     while read line ; do
         echo -e "$pre: ${__TRED}$line${__TRESET}" >&2
-    done < <(echo -e "$*\n""TRACE:\n$(__stacktrace)")
+    done < <(echo -e "$*\n")
+
+    while read line; do
+        echo -e "$pre: ${__TRED}$line${__TRESET}" >&2
+    done < <(echo -e "TRACE:\n$(__stacktrace)")
 }
 
 # @desc as with i(), but msg text is highlighted
