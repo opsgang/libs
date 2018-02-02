@@ -2,11 +2,44 @@
 # vim: et sr sw=4 ts=4 smartindent syntax=sh:
 #
 # TESTS for std/functions
-#
-### source_files()
+
+# ... for logging functions 
 EXPECTED_PREFIX="$(basename $0)"
 EXPECTED_DEBUG_PREFIX="$(realpath -- $0)" # horrid, but no better way
 
+# ... for str_to_safe_chars()
+STR_ASCII="$(for((i=32;i<=127;i++)) do printf \\$(printf '%03o\t' "$i"); done;printf "\n")@"
+STR_UTF8_COPYRIGHT="$INPUT_STR_ASCII$(printf '\xC2\xA9')"
+STR_UTF8_FLAT_E="cafe attache mate trema"
+UTF8_ACUTE_E="$(printf '\xC3\xA9')" # e with acute accent
+
+run_safe_chars_posix() {
+    local loc=POSIX
+    ( loc="$loc" _run_safe_chars "$1" "$2" "$3" ) || return 1
+}
+
+run_safe_chars_utf8() {
+    local loc=en_US.UTF-8
+    ( loc="$loc" _run_safe_chars "$1" "$2" "$3" ) || return 1
+}
+
+_run_safe_chars() {
+    export LC_ALL="$loc" LC_CTYPE="$loc" LANG="$loc" LANGUAGE="$loc"
+    local s="$1"
+    local olen="${#s}"
+
+    o=$(str_to_safe_chars "$s" "$2" "$3")
+    if [[ $? -ne 0 ]] || [[ -z "$o" ]]; then
+        e "Unable to transform str $s"
+        return 1
+    fi
+    nlen="${#o}"
+    # ... check str length same
+    [[ $olen -ne $nlen ]] && e "orig str: [$olen chars] $s\nnew str: [$nlen chars] $o" && return 1
+    echo "$o"
+}
+
+### source_files()
 t_source_files() {
     SUITE="source_files()"
     run_t t_will_error_if_file_can_not_be_sourced
@@ -26,6 +59,75 @@ t_required_vars() {
     SUITE="required_vars()"
     run_t t_success_if_all_vars_defined
     run_t t_error_if_any_vars_missing
+}
+
+### str_to_safe_chars()
+t_str_to_safe_chars() {
+    SUITE="str_to_safe_chars"
+    run_t t_default_replacement
+    run_t t_replacement_str_too_long
+    run_t t_safe_aws_tag
+    run_t t_disallowed_chars_no_exclamation
+    run_t t_disallowed_chars_with_exclamation
+    run_t t_replace_with_utf8_char
+    run_t t_replace_utf8_char_with_ascii
+}
+
+t_default_replacement() {
+    local r="" e=""
+    e='___________+_-./0123456789:__=__@ABCDEFGHIJKLMNOPQRSTUVWXYZ______abcdefghijklmnopqrstuvwxyz_____@'
+    r=$(run_safe_chars_posix "$STR_ASCII") || return 1
+    [[ "$r" == "$e" ]]
+}
+
+t_replacement_str_too_long() {
+    o=$(str_to_safe_chars "some string" "__" 2>&1)
+    if [[ $? -ne 0 ]] && echo "$o" | grep 'replacement must be one UTF-8 char' >/dev/null
+    then
+        return 0
+    else
+        return 1
+    fi
+}
+
+t_safe_aws_tag() {
+    local r="" e=""
+    e=' __________+_-./0123456789:__=__@ABCDEFGHIJKLMNOPQRSTUVWXYZ______abcdefghijklmnopqrstuvwxyz_____@'
+    allowed_aws_chars=" $(safe_chars_def_list)"
+    r=$(run_safe_chars_posix "$STR_ASCII" "_" "$allowed_aws_chars") || return 1
+    [[ "$r" == "$e" ]]
+}
+
+t_disallowed_chars_no_exclamation() {
+    local r="" e=""
+    e='apple____'
+    r=$(run_safe_chars_posix 'apple!$*&' '_' '![:punct:][:blank:]') || return 1
+    [[ $r == $e ]]
+}
+
+t_disallowed_chars_with_exclamation() {
+    local r="" e=""
+    e='apple__*_'
+    r=$(run_safe_chars_posix 'apple !$*&' '_' '!!$&[:blank:]') || return 1
+    [[ $r == $e ]]
+}
+
+t_replace_with_utf8_char() {
+    local r="" e=""
+    local _e=$UTF8_ACUTE_E
+    e="caf$_e attach$_e mat$_e tr${_e}ma"
+    r=$(run_safe_chars_utf8  "$STR_UTF8_FLAT_E" "$UTF8_ACUTE_E" '!e') || return 1
+    [[ $r == $e ]]
+}
+
+t_replace_utf8_char_with_ascii() {
+    # ... replacing acute-accented e with E
+    local r="" e=""
+    local _e=$UTF8_ACUTE_E
+    local test_str="caf$_e attach$_e mat$_e tr${_e}ma"
+    local e="cafE attachE matE trEma"
+    r=$(run_safe_chars_utf8  "$test_str" "E" "!$UTF8_ACUTE_E") || return 1
+    [[ $r == $e ]]
 }
 
 ### envsubst_tokens_list()

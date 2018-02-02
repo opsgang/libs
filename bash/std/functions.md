@@ -7,6 +7,8 @@
 ---
 * [source\_files()](#source_files)
 * [required\_vars()](#required_vars)
+* [str\_to\_safe\_chars()](#str_to_safe_chars)
+* [safe\_chars\_def\_list()](#safe_chars_def_list)
 * [envsubst\_tokens\_list()](#envsubst_tokens_list)
 * [random\_str()](#random_str)
 * [semver\_a\_ge\_b()](#semver_a_ge_b)
@@ -58,6 +60,72 @@ required_vars "FOO BAR" || exit 1
 
 ```
 
+### str\_to\_safe\_chars()
+
+Prints a user-passed *single-line* str with all instances of certain chars
+replaced by a safe character.
+
+*See examples  if you are working with UTF-8 wide-byte chars*
+
+Useful for creating vals that can be consumed by systemd environment AND sourced by a shell script
+both of which treat quotes, whitespace and `$` signs differently.
+
+Or to create valid AWS tag values (there is a limited set of valid chars)
+
+* Arg 1: *single-line* str to transform
+
+* Arg 2: Optional: the replacement char, defaults to `_`
+
+      To use `]` and/or `[` in Arg 2, they must appear at start of pattern in that order
+      (after any leading `!` if you want to specify a disallowed list)
+
+      To use `-` in Arg2, it MUST appear as the last char.
+      You can use named POSIX character classes e.g. [:blank:] or [:alnum:].
+
+* Arg 3: Optional: the list of chars to keep (*or replace if prefixed with* `!`)
+      To include a literal `!` in a list to replace, add another exclamation mark.
+
+      The default is strict, replacing all but alphanumerics and these chars:`_.:/=+-@`
+
+Call [safe_chars_def_list](#safe_chars_def_list) to get the default char list.
+
+#### Example
+
+```bash
+# ... default
+#
+str_to_safe_chars 'from_repo:"git@github.com/me/foo"'
+    # output: from_repo:_git@github.com/me/foo_
+
+# ... handling UTF-8 (e.g using copyright char as replacement)
+# Ensure your shell's locale is set up for utf8 first ... e.g.
+loc=en_US.UTF-8 ; export LC_ALL="$loc" LC_CTYPE="$loc" LANG="$loc" LANGUAGE="$loc"
+str_to_safe_chars "-C-" "$(printf '\xC2\xA9')" '!C' # replace C with copyright symbol
+
+# ... for safe AWS tag (transform same chars as default, but whitespace is fine)
+#
+str_to_safe_chars "from repo: <git@github.com/me/foo>" '_' "$(safe_chars_def_list)[:blank:]"
+    # output: from repo:_git@github.com/me/foo_
+
+# ... for val in systemd env file that can also be sourced by shell script
+# so no backslash, `$`, backtick, whitespace,`"`, `'`,  whitespace or .
+bad_chars='!\$`[:blank:]"'"'" # Note leading ! indicates list is of chars to replace
+str_to_safe_chars 'price (in $USD):"5.00"' '-' "$bad_chars"
+    # output: price-(in--USD):-5.00-
+
+# ... strip all non-alphanumerics except hyphens and underscores
+#
+str_to_safe_chars "from repo: <git@github.com/me/foo>" '_' '[:alnum:]_-'
+    # output: from_repo__git_github_com_me_foo_
+
+ GNU tr does not handle UT8 correctly, so we are using sed instead
+
+```
+
+### safe\_chars\_def\_list()
+
+Prints default list of allowed chars for
+[str_to_safe_chars()](#str_to_safe_chars)
 ### envsubst\_tokens\_list()
 
 produces the SHELL-FORMAT arg suitable for
