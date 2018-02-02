@@ -105,7 +105,9 @@ check_var_defined() {
 #       # output: from repo:_git@github.com/me/foo_
 #
 #   # ... for val in systemd env file that can also be sourced by shell script
-#   # so no backslash, `$`, backtick, whitespace,`"`, `'`,  whitespace or .
+#   #
+#   # so no backslash, `$`, backtick, whitespace,`"`, or `'`.
+#   #
 #   bad_chars='!\$`[:blank:]"'"'" # Note leading ! indicates list is of chars to replace
 #   str_to_safe_chars 'price (in $USD):"5.00"' '-' "$bad_chars"
 #       # output: price-(in--USD):-5.00-
@@ -115,7 +117,6 @@ check_var_defined() {
 #   str_to_safe_chars "from repo: <git@github.com/me/foo>" '_' '[:alnum:]_-'
 #       # output: from_repo__git_github_com_me_foo_
 #
-# GNU tr does not handle UT8 correctly, so we are using sed instead
 #
 str_to_safe_chars() {
     local s="$1" # str to transform
@@ -131,6 +132,7 @@ str_to_safe_chars() {
         sed_class="[${p:1:${#p}}]"
     fi
 
+    # GNU tr does not handle UTF8 correctly, so sed is used instead
     # ... user may pass '/' to $r which would mess with default sed delimiter.
     if [[ "$r" == '/' ]]; then
         echo "$s" | sed -e "s#$sed_class#$r#g"

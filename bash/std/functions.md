@@ -108,7 +108,9 @@ str_to_safe_chars "from repo: <git@github.com/me/foo>" '_' "$(safe_chars_def_lis
     # output: from repo:_git@github.com/me/foo_
 
 # ... for val in systemd env file that can also be sourced by shell script
-# so no backslash, `$`, backtick, whitespace,`"`, `'`,  whitespace or .
+#
+# so no backslash, `$`, backtick, whitespace,`"`, or `'`.
+#
 bad_chars='!\$`[:blank:]"'"'" # Note leading ! indicates list is of chars to replace
 str_to_safe_chars 'price (in $USD):"5.00"' '-' "$bad_chars"
     # output: price-(in--USD):-5.00-
@@ -118,7 +120,6 @@ str_to_safe_chars 'price (in $USD):"5.00"' '-' "$bad_chars"
 str_to_safe_chars "from repo: <git@github.com/me/foo>" '_' '[:alnum:]_-'
     # output: from_repo__git_github_com_me_foo_
 
- GNU tr does not handle UT8 correctly, so we are using sed instead
 
 ```
 
