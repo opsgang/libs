@@ -1,0 +1,190 @@
+# vim: et sr sw=4 ts=4 smartindent syntax=sh:
+# ... must source std/functions and std/functions.git first
+
+# Globals ...
+
+# ... path to terraform binary - set this in env or make sure it is in your PATH
+TERRAFORM="${TERRAFORM:-}"
+
+# ... set to non-empty to keep downloaded terraform modules.
+KEEP_PLUGINS="${KEEP_PLUGINS:-}"
+
+# ... set to non-empty value to skip git checks and `terraform apply`
+DEVMODE="${DEVMODE:-}"
+
+# ... any opts to pass `init` (or `remote config`) on calling [terraform_init](#terraform_init)
+TERRAFORM_INIT_OPTS="${TERRAFORM_INIT_OPTS:-}"
+
+# ... any opts to pass `apply` on calling [terraform_apply](#terraform_apply)
+TERRAFORM_APPLY_OPTS="${TERRAFORM_APPLY_OPTS:-}"
+
+# ... with older tf versions set this and [terraform_init](#terraform_init) will pass `get` these opts.
+TERRAFORM_GET_OPTS="${TERRAFORM_GET_OPTS:-}"
+
+__run_if_exists() {
+    local f="$1"
+    if declare -f $f >/dev/null 2>&1
+    then
+        i "... running $f function"
+        ! $f && e "... failed." &&  return 1
+    fi
+    return 0
+}
+
+tf() {
+    [[ -z "$TERRAFORM" ]] && TERRAFORM=$(which terraform 2>/dev/null)
+    if [[ -z "$TERRAFORM" ]]; then
+        red_e "... can not locate terraform. Set \$TERRAFORM in env if you know the path"
+        return 1
+    fi
+    echo "$TERRAFORM"
+}
+
+terraform_version() {
+    local tv=""
+    $TERRAFORM --version | grep -Po '(?<=Terraform v)[\d\.]+'
+    if [[ $? -ne 0 ]] || [[ -z "$tv" ]]; then
+        red_e "... could not determine version: used $TERRAFORM --version"
+        return 1
+    fi
+}
+
+__special_modes() {
+    _disclaimer_devmode
+    _disclaimer_keep_plugins
+}
+
+_disclaimer_devmode() {
+    local v='DEVMODE'
+    if [[ ! -z "${!v}" ]] ; then
+        yellow_i "================================================="
+        yellow_i "= ACTIVATED: \$${v}"
+        yellow_i "================================================="
+        bold_i   "... will print additional info to stdout"
+        bold_i   "... ignoring uncommitted or unpushed git changes"
+        bold_i   "... not going to terraform-apply"
+        yellow_i "================================================="
+    fi
+}
+
+_disclaimer_keep_plugins() {
+    local v='KEEP_PLUGINS'
+    if [[ ! -z "${!v}" ]] ; then
+        yellow_i "================================================="
+        yellow_i "= ACTIVATED: \$${v}"
+        yellow_i "================================================="
+        bold_i   "... will not delete previously downloaded"
+        bold_i   "    terraform plugins."
+        yellow_i "================================================="
+    fi
+}
+
+# assumes you are in the terraform working dir where apply was run.
+terraform_cleanup() {
+    i "... cleaning up caches, state files"
+    rm -rf ~/.terraform.d 2>/dev/null
+    find . -type f -name '*.tfstate' -o -name '*.tfstate.backup' -exec rm {} \;
+    if [[ -z "$KEEP_PLUGINS" ]]; then
+        rm -rf .terraform
+    else
+        yellow_i "KEEP_PLUGINS set - will not delete existing plugins."
+        find .terraform -path .terraform/plugins -prune -o -type f -print -exec rm {} \;
+    fi
+    return 0
+}
+
+terraform_init() {
+    local init_opts="${*:-$TERRAFORM_INIT_OPTS}" # init / remote config opts
+    local get_opts="$TERRAFORM_GET_OPTS"
+    local tv=$(terraform_version) ; [[ -z "$tv" ]] && return 1
+
+    # ... for terraform 0.9.0+
+    local init_cmd="init" get_cmd=""
+
+    i "... initialising terraform"
+
+    # ... for terraform <0.9.0
+    if ! semver_a_ge_b "$(terraform_version)" "0.8.8"
+    then
+        init_cmd="remote config"
+        get_cmd="get" # need to get modules first.
+    fi
+
+    if [[ ! -z "$DEVMODE" ]]; then
+        if [[ ! -z "$get_cmd" ]]; then
+            yellow_i "================================================="
+            yellow_i "... will run '$get_cmd' to fetch any modules"
+        fi
+        if [[ ! -z "$init_opts" ]]; then
+            yellow_i "================================================="
+            yellow_i "= terraform $init_cmd opts:"
+            yellow_i "================================================="
+            yellow_i "$init_opts"
+        fi
+        yellow_i "================================================="
+        yellow_i "= EXPORTED VARS:"
+        yellow_i "================================================="
+        yellow_i "$(export)"
+        yellow_i "================================================="
+    fi
+
+    # ... run terraform get if needed
+    [[ ! -z $get_cmd ]] && ! eval "$TERRAFORM get $TERRAFORM_GET_OPTS"&& return 1
+    # ... now run init
+    eval "$TERRAFORM $init_cmd $init_opts"
+}
+
+terraform_apply() {
+    i "... applying terraform"
+    local opts="${*:-$TERRAFORM_APPLY_OPTS}" # opts to pass apply subcmd
+
+    # ... for terraform 0.11.0 or later
+    semver_a_ge_b "$(terraform_version)" "0.11.0" && opts="$opts -auto-approve"
+
+    if [[ -n "$DEVMODE" ]] && [[ -n "$opts" ]]; then
+        yellow_i "================================================="
+        yellow_i "= terraform apply opts:"
+        yellow_i "================================================="
+        yellow_i "$opts"
+        yellow_i "================================================="
+    fi
+    [[ ! -z "$DEVMODE" ]] && yellow_i "DEVMODE - skipping ${FUNCNAME[0]}" && return 0
+    eval "$TERRAFORM apply $opts"
+}
+
+terraform_run() {
+    local wd="$1" tf=""
+
+    __special_modes
+
+    tf=$(tf) || return 1
+    i "... using $tf"
+
+    if [[ "$wd" ]]; then
+        i "... changing to working dir $wd"
+        ! cd $wd && red_e "... could not change to $wd" && return 1
+    fi
+
+    (
+        terraform_cleanup || return 1
+
+        __run_if_exists terraform_preinit  || return 1
+
+        terraform_init || return 1
+
+        __run_if_exists terraform_postinit  || return 1
+
+        $TERRAFORM plan || return 1
+
+        no_unpushed_changes || return 1
+
+        __run_if_exists terraform_preapply  || return 1
+
+        terraform_apply || return 1
+
+        __run_if_exists terraform_postapply  || return 1
+    )
+
+    return 0
+}
+

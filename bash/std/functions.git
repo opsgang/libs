@@ -158,7 +158,7 @@ git_vars() {
 # @desc runs [check\_for\_changes](#check_for_changes) and 
 # [sha_in_origin](#sha_in_origin) for **current dir**.
 #
-# If $DEVMODE is non-empty, the checks will be skipped.
+# If $DEVMODE is set, the checks will be skipped.
 #
 # @example
 #   # ... check whether what I'm deploying is reproducible

@@ -115,7 +115,7 @@ echo "I am in a local clone of $GIT_REPO on branch $GIT_BRANCH"
 runs [check\_for\_changes](#check_for_changes) and 
 [sha_in_origin](#sha_in_origin) for **current dir**.
 
-If $DEVMODE is non-empty, the checks will be skipped.
+If $DEVMODE is set, the checks will be skipped.
 
 #### Example
 
