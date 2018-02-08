@@ -20,7 +20,7 @@ TL;DR? [Skip to the example](#example)
 
     * [rendered output](#rendered-output)
 
-    * [raw outpu](#raw-output)
+    * [raw output](#raw-output)
 
  EXAMPLE ANNOTATED SCRIPT
    
@@ -218,52 +218,50 @@ the glory of [foo()](#foo) <-- see this inline link.
 
 
 ### RAW-OUTPUT
-```
-# my\_funcs.sh
----
-# GLOBALS
 
-* `$FOO`: _... path to foo binary_
-    * reads env var `$FOO`
-    * or default val: `echo`
-
-* `$BAR`
-    * value: `"some string"`
-
-
-# FUNCTIONS
-
-## String Functions
----
-* [foo()](#foo)
-## Useless Functions
----
-* [bar()](#bar)
-
----
-
-## String Functions
----
-### foo()
-
-Prints _foo:_ plus user passed strs.
-
-Return *1* on err. I can use **markdown** here.
-
-#### Example
-
-```bash
-foo "hi!" # foo says hi!
-
-```
-
-## Useless Functions
----
-### bar()
-
-Spurious lesser func when you consider
-the glory of [foo()](#foo) <-- see this inline link.
-
-```
+        # my\_funcs.sh
+        ---
+        # GLOBALS
+        
+        * `$FOO`: _... path to foo binary_
+            * reads env var `$FOO`
+            * or default val: `echo`
+        
+        * `$BAR`
+            * value: `"some string"`
+        
+        
+        # FUNCTIONS
+        
+        ## String Functions
+        ---
+        * [foo()](#foo)
+        ## Useless Functions
+        ---
+        * [bar()](#bar)
+        
+        ---
+        
+        ## String Functions
+        ---
+        ### foo()
+        
+        Prints _foo:_ plus user passed strs.
+        
+        Return *1* on err. I can use **markdown** here.
+        
+        #### Example
+        
+        ```bash
+        foo "hi!" # foo says hi!
+        
+        ```
+        
+        ## Useless Functions
+        ---
+        ### bar()
+        
+        Spurious lesser func when you consider
+        the glory of [foo()](#foo) <-- see this inline link.
 
 **End of RAW-OUTPUT**
