@@ -160,30 +160,31 @@ terraform_run() {
     tf=$(tf) || return 1
     i "... using $tf"
 
-    if [[ "$wd" ]]; then
-        i "... changing to working dir $wd"
-        ! cd $wd && red_e "... could not change to $wd" && return 1
-    fi
-
     (
-        terraform_cleanup || return 1
+        if [[ "$wd" ]]; then
+            i "... changing to working dir $wd"
+            ! cd $wd && red_e "... could not change to $wd" && exit 1
+        fi
 
-        __run_if_exists terraform_preinit  || return 1
+        terraform_cleanup || exit 1
 
-        terraform_init || return 1
+        __run_if_exists terraform_preinit  || exit 1
 
-        __run_if_exists terraform_postinit  || return 1
+        terraform_init || exit 1
 
-        $TERRAFORM plan || return 1
+        __run_if_exists terraform_postinit  || exit 1
 
-        no_unpushed_changes || return 1
+        $TERRAFORM plan || exit 1
 
-        __run_if_exists terraform_preapply  || return 1
+        no_unpushed_changes || exit 1
 
-        terraform_apply || return 1
+        __run_if_exists terraform_preapply  || exit 1
 
-        __run_if_exists terraform_postapply  || return 1
-    )
+        terraform_apply || exit 1
+
+        __run_if_exists terraform_postapply  || exit 1
+
+    ) || return 1
 
     return 0
 }
