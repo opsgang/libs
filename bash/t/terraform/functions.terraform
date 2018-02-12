@@ -1,0 +1,253 @@
+#!/bin/bash
+# vim: et sr sw=4 ts=4 smartindent syntax=sh:
+# TESTS terraform
+#
+
+__CLEANUP_DIR="/var/tmp/functions.terraform.cleanup"
+setup_cleanup() {
+    i "... setting up for cleanup"
+    local bd=$__CLEANUP_DIR
+    local ltd="$bd/.terraform"
+    local htd="~/.terraform.d"
+
+    ! rm -r $bd && red_e "could not delete $bd" && return 1
+    ! rm -r $htd && red_e "could not delete $htd" && return 1
+
+    mkdir -p $ltd/plugins/{a,b}
+    mkdir -p $htd/checkpoint_foo
+
+    touch $bd/terraform.tfstate{.backup,} || return 1
+    touch $bd/.terraform/terraform.tfstate{.backup,} || return 1
+    touch $bd/.terraform/plugins/{a,b}/1 ||  return 1
+    touch $bd/{a.tf,b.tf} || return 1
+
+}
+
+setup_terraform_stubs() {
+    local v="$1" # terraform version
+    local trc="${2:-0}" # terraform return code
+    TERRAFORM=terraform # use the stub declared in this setup
+
+    stub_terraform_version="$(echo -e "terraform_version() {\necho $v\n}")"
+
+    eval "$stub_terraform_version"
+    terraform() {
+        echo "$*" ; return $trc
+    }
+}
+
+### __run_if_exists
+t___run_if_exists() {
+    SUITE="__run_if_exists()"
+    run_t t_succeed_if_func_not_exist
+    run_t t_fail_if_existing_func_fails
+    run_t t_succeed_if_existing_func_succeeds
+}
+
+t_tf() {
+    SUITE="tf()"
+    run_t t_tf_path_not_set_or_found
+    run_t t_prefer_tf_env_var
+    run_t t_use_which_if_tf_var_not_set
+}
+
+### terraform_cleanup
+t_terraform_cleanup() {
+    run_t t_cleanup_default_behaviour
+    run_t t_cleanup_keep_plugins
+}
+
+### terraform_init
+t_terraform_init() {
+    run_t t_init_lt_0_9
+    run_t t_init_ge_0_9
+    run_t t_init_lt_0_9_with_opts
+    run_t t_init_ge_0_9_with_opts
+}
+
+### terraform_apply
+t_terraform_apply() {
+    run_t t_apply_lt_0_11
+    run_t t_apply_ge_0_11
+    run_t t_apply_lt_0_11_with_opts
+    run_t t_apply_ge_0_11_with_opts
+    run_t t_apply_skip_if_devmode
+}
+
+t_apply_lt_0_11() {
+    (
+        set -o pipefail
+        setup_terraform_stubs 0.10.100
+        o=$(terraform_apply 2>&1)
+        [[ $? -eq 0 ]] && [[ $(echo "$o" | tail -n 1) == $(echo -e "apply") ]]
+    )
+}
+
+t_apply_ge_0_11() {
+    (
+        set -o pipefail
+        setup_terraform_stubs 0.11.0
+        o=$(terraform_apply 2>&1)
+        [[ $? -eq 0 ]] && [[ $(echo "$o" | tail -n 1) == $(echo -e "apply -auto-approve") ]]
+    )
+}
+
+t_apply_lt_0_11_with_opts() {
+    (
+        set -o pipefail
+        local __ao="applyA applyB applyC"
+        TERRAFORM_APPLY_OPTS="$__ao"
+        setup_terraform_stubs 0.10.100
+        o=$(terraform_apply 2>&1)
+        [[ $? -eq 0 ]] && [[ $(echo "$o" | tail -n 1) == $(echo -e "apply $__ao") ]]
+    )
+}
+
+t_apply_ge_0_11_with_opts() {
+    (
+        set -o pipefail
+        local __ao="applyA applyB applyC"
+        TERRAFORM_APPLY_OPTS="$__ao"
+        setup_terraform_stubs 0.11.0
+        o=$(terraform_apply 2>&1)
+        [[ $? -eq 0 ]] && [[ $(echo "$o" | tail -n 1) == $(echo -e "apply $__ao -auto-approve") ]]
+    )
+}
+
+t_apply_skip_if_devmode() {
+    (
+        set -o pipefail
+        setup_terraform_stubs 0.11.0
+        DEVMODE=true
+        o=$(terraform_apply 2>&1)
+        [[ $? -eq 0 ]] && [[ $(echo "$o" | tail -n 1) =~ skipping\ terraform\ apply ]]
+    )
+}
+
+# ... should run get, then remote config
+t_init_lt_0_9() {
+    (
+        set -o pipefail
+        setup_terraform_stubs 0.8.8
+        o=$(terraform_init 2>&1)
+        [[ $? -eq 0 ]] && [[ $(echo "$o" | tail -n 2) == $(echo -e "get\nremote config") ]]
+    )
+}
+
+# ... should run init
+t_init_ge_0_9() {
+    (
+        set -o pipefail
+        setup_terraform_stubs 0.9.0
+        o=$(terraform_init 2>&1)
+        [[ $? -eq 0 ]] && [[ $(echo "$o" | tail -n 1) == $(echo -e "init") ]]
+    )
+}
+
+t_init_lt_0_9_with_opts() {
+    (
+        set -o pipefail
+        local __go="geta getb getc"
+        local __io="remote_configA remote_configB"
+        TERRAFORM_GET_OPTS="$__go"
+        TERRAFORM_INIT_OPTS="$__io"
+        setup_terraform_stubs 0.8.8
+        o=$(terraform_init 2>&1)
+        [[ $? -eq 0 ]] && [[ $(echo "$o" | tail -n 2) == $(echo -e "get $__go\nremote config $__io") ]]
+    )
+}
+
+t_init_ge_0_9_with_opts() {
+    (
+        set -o pipefail
+        local __go="geta getb getc" # should be ignored with this tf version
+        local __io="initA initB"
+        TERRAFORM_GET_OPTS="$__go"
+        TERRAFORM_INIT_OPTS="$__io"
+        setup_terraform_stubs 0.9.0
+        o=$(terraform_init 2>&1)
+        [[ $? -eq 0 ]] && [[ $(echo "$o" | tail -n 1) == $(echo -e "init $__io") ]]
+    )
+}
+
+t_cleanup_default_behaviour() {
+    local d=$__CLEANUP_DIR
+    setup_cleanup || return 1
+    (
+        cd $d
+        terraform_cleanup
+    )
+    f=$(find $d ~/.terraform.d -type f 2>/dev/null)
+    [[ "$(echo "$f" | sort)" == "$(echo -e "$d/a.tf\n$d/b.tf")" ]]
+}
+
+t_cleanup_keep_plugins() {
+    local d=$__CLEANUP_DIR
+    setup_cleanup || return 1
+    (
+        cd $d
+        KEEP_PLUGINS=true terraform_cleanup >/dev/null
+    )
+    f=$(find $d ~/.terraform.d -type f 2>/dev/null)
+    exp="$(echo -e "$d/.terraform/plugins/a/1\n$d/.terraform/plugins/b/1\n$d/a.tf\n$d/b.tf")"
+    [[ "$(echo "$f" | sort)" == "$exp" ]]
+}
+
+t_tf_path_not_set_or_found() {
+    (
+        TERRAFORM="" ;
+        which() { # will override which, used in tf() if $TERRAFORM not set
+            return 1
+        }
+
+        a=$(tf 2>&1) ; [[ $? -ne 0 ]] && echo $a | grep 'can not locate terraform' >/dev/null
+    )
+}
+
+t_prefer_tf_env_var() {
+    (
+        TERRAFORM=/use/this/path
+        which() {
+            echo "/don't/use/this/path"
+        }
+        a=$(tf) ; [[ $? -eq 0 ]] && echo $a | grep '^/use/this/path$' >/dev/null
+    )
+}
+
+t_use_which_if_tf_var_not_set () {
+    (
+        TERRAFORM="" ;
+        which() {
+            echo "/use/this/path"
+        }
+        a=$(tf) ; [[ $? -eq 0 ]] && echo $a | grep '^/use/this/path$' >/dev/null
+    )
+}
+
+t_succeed_if_func_not_exist() {
+    __run_if_exists this_func_does_not_exist
+}
+
+t_fail_if_existing_func_fails() {
+    (
+        ___boo() {
+            return 1
+        }
+        ! __run_if_exists ___boo >/dev/null 2>&1
+    )
+}
+
+t_succeed_if_existing_func_succeeds() {
+    (
+        ___boo() {
+            echo "BOO"
+        }
+        a=$(__run_if_exists ___boo)
+        [[ $? -eq 0 ]] && echo $a | grep -P '^BOO$' >/dev/null
+    )
+}
+
+! . t/functions.t && echo "ERROR $0: could not source functions.t" && exit 1
+source_src_and_deps "std/functions std/functions.git" || exit 1
+
+run $*

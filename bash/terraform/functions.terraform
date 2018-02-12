@@ -25,7 +25,7 @@ __run_if_exists() {
     local f="$1"
     if declare -f $f >/dev/null 2>&1
     then
-        i "... running $f function"
+        d "... running $f function" >&2
         ! $f && e "... failed." &&  return 1
     fi
     return 0
@@ -111,7 +111,7 @@ _disclaimer_keep_plugins() {
 terraform_cleanup() {
     i "... cleaning up caches, state files"
     rm -rf ~/.terraform.d 2>/dev/null
-    find . -type f -name '*.tfstate' -o -name '*.tfstate.backup' -exec rm {} \;
+    find . -type f \( -name '*.tfstate' -o -name '*.tfstate.backup' \) -exec rm {} \;
     if [[ -z "$KEEP_PLUGINS" ]]; then
         rm -rf .terraform
     else
@@ -128,7 +128,7 @@ terraform_cleanup() {
 terraform_init() {
     local init_opts="$TERRAFORM_INIT_OPTS" # init / remote config opts
     local get_opts="$TERRAFORM_GET_OPTS"
-    local tv=$(terraform_version) ; [[ -z "$tv" ]] && return 1
+    local tv=$(terraform_version) ; [[ -z "$tv" ]] && e "version of terrform not found" && return 1
 
     # ... for terraform 0.9.0+
     local init_cmd="init" get_cmd=""
@@ -136,7 +136,7 @@ terraform_init() {
     i "... initialising terraform"
 
     # ... for terraform <0.9.0
-    if ! semver_a_ge_b "$(terraform_version)" "0.8.8"
+    if ! semver_a_ge_b "$(terraform_version)" "0.9.0"
     then
         init_cmd="remote config"
         get_cmd="get" # need to get modules first.
