@@ -2,11 +2,6 @@
 # ... these depend on std/functions and std/functions.log_msgs
 #
 
-# TODO:   run_t GIT_INFO_is_sanitised
-#    # ... sanitised string (suitable as unquoted val of var or, for example, aws tag value)
-#    export GIT_INFO=$(echo ${RAW_GIT_INFO} | tr -c '[[:alnum:] _.:/=+-@\n]' '_')
-#    cd $_pwd
-
 # path to git binary
 GIT="${GIT:-git --no-pager}"
 
