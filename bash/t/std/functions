@@ -291,6 +291,13 @@ t_d() {
     SUITE='d()'
     run_t t_no_output_if_DEBUG_not_set
     run_t t_output_if_debug_set
+    run_t t_no_debug_output_if_QUIET
+}
+
+### i()
+t_i() {
+    SUITE='i()'
+    run_t t_no_i_output_if_QUIET
 }
 
 ### __stacktrace()
@@ -303,8 +310,16 @@ t___stacktrace() {
 
 # DEBUG output contains bash terminal codes for colour ...
 t_output_if_debug_set() {
-    echo "$(DEBUG=true d 'should print')" \
+    echo "$(DEBUG=true d 'should print' 2>&1)" \
     | grep -Po "^DEBUG $EXPECTED_DEBUG_PREFIX:.*should print" >/dev/null
+}
+
+t_no_debug_output_if_QUIET() {
+    [[ "$(QUIET=true DEBUG=true d 'should print nothing' 2>&1)" == "" ]]
+}
+
+t_no_i_output_if_QUIET() {
+    [[ "$(QUIET=true i 'should print nothing' 2>&1)" == "" ]]
 }
 
 t_no_output_if_DEBUG_not_set() {

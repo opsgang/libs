@@ -4,8 +4,9 @@
 #
 
 __CLEANUP_DIR="/var/tmp/functions.terraform.cleanup"
+__HOOKS="terraform_preinit terraform_postinit terraform_preapply terraform_postapply"
+
 setup_cleanup() {
-    i "... setting up for cleanup"
     local bd=$__CLEANUP_DIR
     local ltd="$bd/.terraform"
     local htd="~/.terraform.d"
@@ -30,10 +31,28 @@ setup_terraform_stubs() {
 
     stub_terraform_version="$(echo -e "terraform_version() {\necho $v\n}")"
 
+    stub_terraform=$(echo -e "terraform(){\necho \$*; return $trc\n}")
+
     eval "$stub_terraform_version"
-    terraform() {
-        echo "$*" ; return $trc
-    }
+    eval "$stub_terraform"
+}
+
+setup_terraform_run_stubs() {
+    local v="$1" # terraform version
+    local trc=${2:-0} # terraform return code
+    local nrc=${3:-0} # no_unpushed_changes return code
+    local hook="" f=""
+
+    setup_terraform_stubs "$v" $trc
+
+    stub_no_unpushed_changes="$(echo -e "no_unpushed_changes() {\nreturn $nrc\n}")"
+    eval "$stub_no_unpushed_changes"
+    
+    for hook in $__HOOKS; do
+        f="$(echo -e "$hook() {\necho TEST RAN $hook\n}")"
+        eval "$f"
+    done
+
 }
 
 ### __run_if_exists
@@ -72,6 +91,44 @@ t_terraform_apply() {
     run_t t_apply_lt_0_11_with_opts
     run_t t_apply_ge_0_11_with_opts
     run_t t_apply_skip_if_devmode
+}
+
+### terraform_run
+t_terraform_run() {
+    run_t t_run_in_devmode_skipping
+    run_t t_run_full_lifecycle
+    run_t t_run_fail_if_bad_working_dir
+}
+
+t_run_in_devmode_skipping() {
+    (
+        set -o pipefail
+        setup_terraform_stubs 0.8.8
+        o=$(DEVMODE=true terraform_run 2>&1) || return 1
+        echo "$o" | grep 'skipping git checks' >/dev/null || return 1
+        echo "$o" | grep 'skipping terraform apply' >/dev/null || return 1
+    )
+}
+
+t_run_full_lifecycle() {
+    local exp="TEST RAN terraform_preinit\nget\nremote config\nTEST RAN terraform_postinit\nplan"
+    exp="$exp\nTEST RAN terraform_preapply\napply\nTEST RAN terraform_postapply"
+
+    (
+        set -o pipefail
+        setup_terraform_run_stubs 0.8.8
+        o=$(QUIET=true terraform_run 2>&1) || return 1
+        [[ "$o" == "$(echo -e "$exp")" ]]
+    )
+}
+
+t_run_fail_if_bad_working_dir() {
+    d=/does/not/exist
+    (
+        setup_terraform_stubs 0.10.100
+        o=$(QUIET=true terraform_run $d 2>&1)
+        [[ $? -ne 0 ]] && echo "$o" | grep 'could not change to /does/not/exist' >/dev/null
+    )
 }
 
 t_apply_lt_0_11() {
