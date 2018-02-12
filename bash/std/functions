@@ -272,7 +272,7 @@ __TRESET="\033[0m"
 
 __CALLER_REGX="^([^ ]+) ([^ ]+) (.+)$"
 
-# ... set in env to non-empty value to print debug messages to STDERR (See [d()](#d)
+# ... set in env to non-empty value to print debug messages to STDERR (See [d()](#d))
 DEBUG=${DEBUG:-}
 
 # ... set in env to non-empty value to silence all messages apart from errors
@@ -342,7 +342,8 @@ e() {
     done < <(echo -e "TRACE:\n$(__stacktrace)")
 }
 
-# @desc prints INFO msg (STDOUT) with context prefix
+# @desc prints INFO msg (STDOUT) with context prefix.
+#
 # Caller can pass multiple quoted strings as each line
 # of the msg.
 # _\n_ within a str is also treated as newline.
@@ -364,7 +365,8 @@ i() {
     done < <(echo -e "$*")
 }
 
-# @desc prints DEBUG msg (STDERR) with context prefix
+# @desc prints DEBUG msg (STDERR) with context prefix.
+#
 # Caller can pass multiple quoted strings as each line
 # of the msg.
 # _\n_ within a str is also treated as newline.

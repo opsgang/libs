@@ -2,7 +2,7 @@
 ---
 # GLOBALS
 
-* `$DEBUG`: _... set in env to non-empty value to print debug messages to STDERR (See [d()](#d)_
+* `$DEBUG`: _... set in env to non-empty value to print debug messages to STDERR (See [d()](#d))_
     * reads env var `$DEBUG`
     * or default val: `empty string`
 
@@ -213,7 +213,8 @@ _\n_ within a str is also treated as newline.
 
 ### i()
 
-prints INFO msg (STDOUT) with context prefix
+prints INFO msg (STDOUT) with context prefix.
+
 Caller can pass multiple quoted strings as each line
 of the msg.
 _\n_ within a str is also treated as newline.
@@ -232,7 +233,8 @@ i "msg line 1" "line 2\nline3"
 
 ### d()
 
-prints DEBUG msg (STDERR) with context prefix
+prints DEBUG msg (STDERR) with context prefix.
+
 Caller can pass multiple quoted strings as each line
 of the msg.
 _\n_ within a str is also treated as newline.
