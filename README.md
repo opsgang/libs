@@ -39,8 +39,8 @@ To generate it yourself:
 cd bash
 
 libs=$(
-    find ./ -path ./t -prune -o -type f \
-    | grep -v './t\|README' \
+    find ./ -path ./t -prune -o -type f -print \
+    | grep -v './README' \
     | grep -vP '\.(awk|md|markdown|txt)$'
 )
 for lib in $libs; do awk -f bashdoc-to-md.awk $lib > $lib.md ; done

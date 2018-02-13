@@ -173,7 +173,7 @@ in_example {
     name = $1
     gsub(/_/, "\\_", name)
 
-    doc = doc "\n" strip_md(render("h3", name)) "\n" docblock "\n" "---"
+    doc = doc "\n" strip_md(render("h3", name)) "\n" docblock "\n\n" "---"
 
     url = name
     gsub(/\W/, "", url)

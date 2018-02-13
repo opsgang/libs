@@ -39,35 +39,42 @@
 
 Prints branch name (or nothing if you've checked out a tag).
 Returns 1 if current working dir is not in a git repo.
+
 ---
 ### git\_repo()
 
 Prints remote.origin.url from current dir's git config.
 Empty str if not set.
+
 ---
 ### git\_sha()
 
 Prints sha of current commit - up to $GIT\_SHA\_LEN chars.
+
 ---
 ### git\_tag()
 
 Prints out the git-tag on the current commit (exact match only)
 Prints empty str if there is none.
+
 ---
 ### git\_user()
 
 Prints user.name (from git config)
 Returns 1 if not set.
+
 ---
 ### git\_email()
 
 Prints user.email (from git config)
 Returns 1 if not set.
+
 ---
 ### git\_id()
 
 Prints user.name user.email (from git config)
 Returns 1 if user.name not set.
+
 ---
 ### git\_info\_str()
 
@@ -87,6 +94,7 @@ out=$(git_info_str /my/project/repo)
 # repo:git@github.com:opsgang/blah sha1:bc342d35 tag:-no tag- branch:master
 
 ```
+
 
 ---
 ### git\_vars()
@@ -116,6 +124,7 @@ echo "I am in a local clone of $GIT_REPO on branch $GIT_BRANCH"
 
 ```
 
+
 ---
 ## VALIDATION FUNCTIONS
 ---
@@ -137,6 +146,7 @@ DEVMODE=true no_unpushed_changes || exit 1
 
 ```
 
+
 ---
 ### check\_for\_changes()
 
@@ -153,6 +163,7 @@ If not the current dir is checked.
 check_for_changes "/in/my/cloned/dir" || exit 1
 
 ```
+
 
 ---
 ### sha\_in\_origin()
@@ -177,6 +188,7 @@ sha_in_origin || exit 1
 
 ```
 
+
 ---
 ### is\_git\_clone()
 
@@ -194,5 +206,6 @@ is_git_clone || exit 1 # current dir is in a git clone?
 is_git_clone /my/project/file || exit 1 # is file inside a git clone?
 
 ```
+
 
 ---

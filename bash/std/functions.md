@@ -54,6 +54,7 @@ source_files "./foo" "/bar/spaces\ in-name"
 
 ```
 
+
 ---
 ### required\_vars()
 
@@ -71,6 +72,7 @@ Returns 1 if any are undefined or empty.
 required_vars "FOO BAR" || exit 1
 
 ```
+
 
 ---
 ### str\_to\_safe\_chars()
@@ -137,11 +139,13 @@ str_to_safe_chars "from repo: <git@github.com/me/foo>" '_' '[:alnum:]_-'
 
 ```
 
+
 ---
 ### safe\_chars\_def\_list()
 
 Prints default list of allowed chars for
 [str_to_safe_chars()](#str_to_safe_chars)
+
 ---
 ### envsubst\_tokens\_list()
 
@@ -162,11 +166,13 @@ str=envsubst_tokens_list "FOO BAR"
 
 ```
 
+
 ---
 ### random\_str()
 
 creates random str of format <datetime>-<integer>-<integer>
 Useful for docker container names (or suffixes) to "guarantee" uniqueness.
+
 
 ---
 ### semver\_a\_ge\_b()
@@ -191,6 +197,7 @@ semver_a_ge_b 0.99.0-beta V0.99.0-alpha # true (as beta beats alpha)
 
 ```
 
+
 ---
 ### export\_build\_url()
 
@@ -208,6 +215,7 @@ provide an equivalent var. This func just exports it with a standard name.
 
 TravisCI [does not](https://github.com/travis-ci/travis-ci/issues/8935), but it is
 possible to construct it.
+
 
 ---
 ## LOG MESSAGE FUNCTIONS
@@ -238,6 +246,7 @@ _\n_ within a str is also treated as newline.
 
 ```
 
+
 ---
 ### i()
 
@@ -259,6 +268,7 @@ i "msg line 1" "line 2\nline3"
 
 ```
 
+
 ---
 ### d()
 
@@ -274,24 +284,30 @@ _\n_ within a str is also treated as newline.
 d "msg line 1" "line 2\nline3"
 ```
 
+
 ---
 ### red\_e()
 
 as with e(), but msg text is coloured
+
 ---
 ### bold\_i()
 
 as with i(), but msg text is highlighted
+
 ---
 ### yellow\_i()
 
 as with i(), but msg text is coloured.
+
 ---
 ### green\_i()
 
 as with i(), but msg text is coloured.
+
 ---
 ### blue\_i()
 
 as with i(), but msg text is coloured.
+
 ---

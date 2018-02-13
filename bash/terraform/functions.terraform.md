@@ -29,6 +29,8 @@
 
 # FUNCTIONS
 
+* [custom\_governance\_vars()](#custom_governance_vars)
+* [export\_governance\_vars()](#export_governance_vars)
 * [tf()](#tf)
 * [terraform\_version()](#terraform_version)
 * [terraform\_cleanup()](#terraform_cleanup)
@@ -38,37 +40,104 @@
 
 ---
 
+### custom\_governance\_vars()
+
+Exports some default TF_VAR_ env vars.
+
+* $TF_VAR_git_user - see [git\_user(), std/functions.git](../std/functions.git.md#git_user)
+
+* $TF_VAR_git_info - see [git\_info(), std/functions.git](../std/functions.git.md#git_info_str)
+
+* TF_VAR_build_url - see [build\_url(), std/functions](../std/functions.md#build_url)
+
+Optionally use these in your terraform to add governance metadata to provisioned objects
+that support it.
+
+e.g. AWS tags, or in a comment in # a config file
+
+Additionally you can also export your own by defining a custom_governance_vars function
+that exports vars of your own devising.
+
+> The function will fail if your current working dir is not a git repo!
+> 
+> If you really don't want the git stuff, you can define your own export_governance_vars()
+> function in your script AFTER sourcing functions.terraform.
+
+#### Example
+
+```bash
+# ... using default governance vars in terraform:
+variable "git_user"  {}
+variable "git_info"  {}
+variable "build_url" {}
+
+resource "aws_instance" "foo" {
+  ami           = "i-12345678"
+  instance_type = "t2.nano"
+  tags {
+    deployer  = "${var.git_user}"
+    git_info  = "${var.git_info}"
+    build_url = "${var.build_url}"
+  }
+}
+
+# ... setting your own additional vars:
+#     - define custom_governance_vars() func.
+#     - call export_governance_vars.
+custom_governance_vars() {
+
+---
+### export\_governance\_vars()
+
+    TF_VAR_aws_user=$(aws iam get-user --query 'User.UserName' --output text) || return 1
+    export $TF_VAR_aws_user
+}
+
+export_governance_vars || exit 1 # now use var.aws_user in your terraform
+
+```
+
+
+---
 ### tf()
 
 Returns the path to the terraform binary.
 
 Optionally, user can set $TERRAFORM in env, to force the use of a particular binary.
 
+
+---
 ### terraform\_version()
 
 Runs terraform --version.
 
 Used internally to pick which terraform subcommands to run.
 
-Affected by global [$TERRAFORM](#globals).
+Affected by global (#globals) $TERRAFORM.
 
+
+---
 ### terraform\_cleanup()
 
 Deletes any terraform cache or downloaded state files from the local workspace.
 
-**Do not use this if you are not using a remote state backend.**
+> Only use this if your state is stored in a remote backend.
 
 Used to ensure a clean terraform run.
 
 If you are using terraform 0.10.0+, you can set $KEEP_PLUGINS to non-empty
 and any downloaded plugins will not be deleted (to save some run time).
 
+
+---
 ### terraform\_init()
 
 Will run terraform subcommands to initialise / fetch remote state, any modules and plugins.
 
 Some [globals](#globals) - $TERRAFORM, $TERRAFORM_INIT_OPTS, TERRAFORM_GET_OPTS - affect behaviour.
 
+
+---
 ### terraform\_apply()
 
 Runs `terraform apply` - for v0.11.0+, will add the -auto-approve to run it non-interactively.
@@ -79,9 +148,15 @@ Set $TERRAFORM_APPLY_OPTS to pass `apply` any other options.
 
 When $DEVMODE is set, `apply` is not actually run.
 
+
+---
 ### terraform\_run()
 
 Wrapper cmd to perform terraform subcommands for `init` (or `remote cfg`/`get`), `plan`, `apply`.
+
+Arg 1: (optional) path to dir containing your terraform. Defaults to current dir.
+
+> The dir must be a git repo, or the function will fail.
 
 Will use `remote cfg` and `get` instead of `init` for older terraform versions.
 
@@ -92,7 +167,7 @@ See [terraform_init](#terraform_init) and [terraform_apply](#terraform_apply).
 User can define own functions that will run before and after `init`
 and before and after `apply`. (See [lifecycle hooks](#lifecycle-hooks))
 
-#### DEVMODE
+##### devmode
 
 _Used to test your terraform **with out modifying any real infrastructure**_.
 
@@ -106,10 +181,13 @@ the git commit being run exists in the **origin** repo.
 This is to prevent users changing infrastructure but not pushing their
 changes, and also to ensure that the git audit info is accurate.
 
-#### lifecycle_* hooks
+##### lifecycle hooks
 
-**CAVEAT** - if you are using any hooks to modify your actual infrastructure, make sure to
-make them no-op if $DEVMODE is set in the env.
+> **CAVEAT** - if you are using any hooks to modify your actual infrastructure,
+> make them no-op if in $DEVMODE , as `terraform apply` will not run.
+> See terraform_postapply example below.
+
+      For custom governance vars see [export_governance_vars](#export_governance_vars).
 
 * `terraform_preinit`:
    after [terraform\_cleanup](#terraform_cleanup) but before [terraform\_init](#terraform_init).
@@ -155,3 +233,5 @@ make them no-op if $DEVMODE is set in the env.
     
 ```
 
+
+---
