@@ -85,10 +85,6 @@ resource "aws_instance" "foo" {
 #     - define custom_governance_vars() func.
 #     - call export_governance_vars.
 custom_governance_vars() {
-
----
-### export\_governance\_vars()
-
     TF_VAR_aws_user=$(aws iam get-user --query 'User.UserName' --output text) || return 1
     export $TF_VAR_aws_user
 }
@@ -113,7 +109,7 @@ Runs terraform --version.
 
 Used internally to pick which terraform subcommands to run.
 
-Affected by global (#globals) $TERRAFORM.
+Affected by [global](#globals) $TERRAFORM.
 
 
 ---
