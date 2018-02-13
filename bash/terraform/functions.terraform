@@ -114,7 +114,7 @@ tf() {
 #
 # Used internally to pick which terraform subcommands to run.
 #
-# Affected by global (#globals) $TERRAFORM.
+# Affected by [global](#globals) $TERRAFORM.
 #
 terraform_version() {
     local tv=""
