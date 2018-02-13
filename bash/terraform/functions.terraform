@@ -63,30 +63,30 @@ __show_env() {
 # > function in your script AFTER sourcing functions.terraform.
 #
 # @example
-#   # ... using default governance vars in terraform:
-#   variable "git_user"  {}
-#   variable "git_info"  {}
-#   variable "build_url" {}
+#      # ... using default governance vars in terraform:
+#      variable "git_user"  {}
+#      variable "git_info"  {}
+#      variable "build_url" {}
 #
-#   resource "aws_instance" "foo" {
-#     ami           = "i-12345678"
-#     instance_type = "t2.nano"
-#     tags {
-#       deployer  = "${var.git_user}"
-#       git_info  = "${var.git_info}"
-#       build_url = "${var.build_url}"
-#     }
-#   }
+#      resource "aws_instance" "foo" {
+#        ami           = "i-12345678"
+#        instance_type = "t2.nano"
+#        tags {
+#          deployer  = "${var.git_user}"
+#          git_info  = "${var.git_info}"
+#          build_url = "${var.build_url}"
+#        }
+#      }
 #
-#   # ... setting your own additional vars:
-#   #     - define custom_governance_vars() func.
-#   #     - call export_governance_vars.
-#   custom_governance_vars() {
-#       TF_VAR_aws_user=$(aws iam get-user --query 'User.UserName' --output text) || return 1
-#       export $TF_VAR_aws_user
-#   }
+#      # ... setting your own additional vars:
+#      #     - define custom_governance_vars() func.
+#      #     - call export_governance_vars.
+#      custom_governance_vars() {
+#          TF_VAR_aws_user=$(aws iam get-user --query 'User.UserName' --output text) || return 1
+#          export $TF_VAR_aws_user
+#      }
 #
-#   export_governance_vars || exit 1 # now use var.aws_user in your terraform
+#      export_governance_vars || exit 1 # now use var.aws_user in your terraform
 #
 export_governance_vars() {
     git_vars || return 1 # will set $GIT_INFO
