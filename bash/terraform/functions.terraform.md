@@ -48,7 +48,7 @@ Exports some default TF_VAR_ env vars.
 
 * $TF_VAR_git_info - see [git\_info(), std/functions.git](../std/functions.git.md#git_info_str)
 
-* TF_VAR_build_url - see [build\_url(), std/functions](../std/functions.md#build_url)
+* TF_VAR_build_url - see [export\_build\_url(), std/functions](../std/functions.md#export_build_url)
 
 Optionally use these in your terraform to add governance metadata to provisioned objects
 that support it.
