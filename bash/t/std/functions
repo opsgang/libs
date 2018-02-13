@@ -73,6 +73,41 @@ t_str_to_safe_chars() {
     run_t t_replace_utf8_char_with_ascii
 }
 
+### export_build_url()
+t_export_build_url() {
+    SUITE="export_build_url"
+    run_t t_build_url_if_circleci
+    run_t t_build_url_if_travis
+    run_t t_build_url_if_jenkins
+}
+
+t_build_url_if_circleci() {
+    (
+        CIRCLE_BUILD_URL="https://circleci.com/foo/bar/job/123456"
+        export_build_url
+        [[ $? -eq 0 ]] \
+        && [[ $BUILD_URL == $CIRCLE_BUILD_URL ]] \
+        && export -p | grep -Po "\bBUILD_URL=\"$CIRCLE_BUILD_URL\"$" >/dev/null # actually exported
+    )
+}
+
+t_build_url_if_travis() {
+    (
+        TRAVIS="true" TRAVIS_REPO_SLUG="foo/bar" TRAVIS_JOB_ID="123456"
+        export_build_url
+        [[ $? -eq 0 ]] && export -p | grep -Po "\bBUILD_URL=.*" >/dev/null # actually exported
+    )
+}
+
+t_build_url_if_jenkins() {
+    (
+        local url="https://jenkins.example.com/foo/bar/job/123456"
+        BUILD_URL=$url
+        export_build_url
+        [[ $? -eq 0 ]] && export -p | grep -Po "\bBUILD_URL=\"$BUILD_URL\"" >/dev/null
+    )
+}
+
 t_default_replacement() {
     local r="" e=""
     e='___________+_-./0123456789:__=__@ABCDEFGHIJKLMNOPQRSTUVWXYZ______abcdefghijklmnopqrstuvwxyz_____@'

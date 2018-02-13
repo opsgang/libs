@@ -110,6 +110,8 @@ this is documented as a var set in the current script env.
 If the RHS (quoted or unquoted) is `${some_var:-some default}`
 then the default is also documented.
 
+> Any comment on the line directly preceding the assignment
+> is assumed to be a description of the global var.
 
 ## EXAMPLE
 

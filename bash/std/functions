@@ -75,16 +75,17 @@ check_var_defined() {
 #
 # * Arg 2: Optional: the replacement char, defaults to `_`
 #
-#       To use `]` and/or `[` in Arg 2, they must appear at start of pattern in that order
-#       (after any leading `!` if you want to specify a disallowed list)
-#
-#       To use `-` in Arg2, it MUST appear as the last char.
-#       You can use named POSIX character classes e.g. [:blank:] or [:alnum:].
+# > To use `]` and/or `[` in Arg 2, they must appear at start of pattern in that order
+# > (after any leading `!` if you want to specify a disallowed list)
+# > 
+# > To use `-` in Arg2, it MUST appear as the last char.
+# > You can use named POSIX character classes e.g. [:blank:] or [:alnum:].
 #
 # * Arg 3: Optional: the list of chars to keep (*or replace if prefixed with* `!`)
-#       To include a literal `!` in a list to replace, add another exclamation mark.
 #
-#       The default is strict, replacing all but alphanumerics and these chars:`_.:/=+-@`
+# > To include a literal `!` in a list to replace, add another exclamation mark.
+# > 
+# > The default is strict, replacing all but alphanumerics and these chars:`_.:/=+-@`
 #
 # Call [safe_chars_def_list](#safe_chars_def_list) to get the default char list.
 #
@@ -239,6 +240,33 @@ _semver_a_gt_b() {
     local a=$1
     local b=$2
     [[ "$a" == "$b" ]] || [[ $(echo -e "$a\n$b" | sort -V | head -n 1) != "$a" ]]
+}
+
+# @desc Exports $BUILD_URL if available from a number of possible sources.
+#
+# $BUILD_URL is a link to a CI/CD job's run.
+#
+# Returns 1 if BUILD_URL can not be determined. 
+#
+# Use this to annotate your builds and deployments with governance metadata. e.g. the job run
+# should show you who built what when.
+#
+# [shippable](https://shippable.com), [circleci](https://circleci.com) and [jenkins](https://jenkins.io)
+# provide an equivalent var. This func just exports it with a standard name.
+#
+# TravisCI [does not](https://github.com/travis-ci/travis-ci/issues/8935), but it is
+# possible to construct it.
+#
+export_build_url() {
+    if [[ ! -z "$CIRCLE_BUILD_URL" ]]; then
+        BUILD_URL="$CIRCLE_BUILD_URL"
+    elif [[ "$TRAVIS" == "true" ]]; then
+        if required_vars "TRAVIS_REPO_SLUG TRAVIS_JOB_ID"
+        then
+            BUILD_URL="https://travis-ci.org/$TRAVIS_REPO_SLUG/jobs/$TRAVIS_JOB_ID" 
+        fi
+    fi
+    [[ ! -z "$BUILD_URL" ]] && export BUILD_URL
 }
 
 #####################################################################

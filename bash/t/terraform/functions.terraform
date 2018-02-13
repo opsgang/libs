@@ -63,11 +63,20 @@ t___run_if_exists() {
     run_t t_succeed_if_existing_func_succeeds
 }
 
+### tf
 t_tf() {
     SUITE="tf()"
     run_t t_tf_path_not_set_or_found
     run_t t_prefer_tf_env_var
     run_t t_use_which_if_tf_var_not_set
+}
+
+### export_governance_vars
+t_export_governance_vars() {
+    SUITE="export_governance_vars()"
+    run_t t_fails_if_not_a_git_repo
+    run_t t_fails_if_custom_governance_vars_does
+    run_t t_succeeds_if_custom_governance_vars_does
 }
 
 ### terraform_cleanup
@@ -98,6 +107,43 @@ t_terraform_run() {
     run_t t_run_in_devmode_skipping
     run_t t_run_full_lifecycle
     run_t t_run_fail_if_bad_working_dir
+}
+
+t_fails_if_not_a_git_repo() {
+    local d=/var/tmp/${FUNCNAME[0]}
+    rm -rf $d 2>/dev/null ; mkdir -p $d
+    (
+        cd $d
+        o=$(export_governance_vars 2>&1)
+        [[ $? -ne 0 ]] && echo "$o" | grep 'is not inside a git repo' >/dev/null
+    )
+}
+
+t_fails_if_custom_governance_vars_does() {
+    local d=${FUNCNAME[0]}
+    rm -rf $d 2>/dev/null ; mkdir -p $d
+    (
+        cd $d
+        custom_governance_vars() {
+            return 1
+        }
+        o=$(export_governance_vars 2>&1)
+        [[ $? -ne 0 ]] && echo "$o" | grep '... failed' >/dev/null
+    )
+}
+
+t_succeeds_if_custom_governance_vars_does() {
+    local d=${FUNCNAME[0]}
+    rm -rf $d 2>/dev/null ; mkdir -p $d
+    (
+        cd $d
+        custom_governance_vars() {
+            export TF_VAR_foo="true"
+            return 0
+        }
+
+        export_governance_vars && [[ "$TF_VAR_foo" == "true" ]]
+    )
 }
 
 t_run_in_devmode_skipping() {
