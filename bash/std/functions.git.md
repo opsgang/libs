@@ -29,7 +29,7 @@
 * [no\_unpushed\_changes()](#no_unpushed_changes)
 * [check\_for\_changes()](#check_for_changes)
 * [sha\_in\_origin()](#sha_in_origin)
-* [is\_git\_clone()](#is_git_clone)
+* [in\_git\_clone()](#in_git_clone)
 
 ---
 
@@ -190,7 +190,7 @@ sha_in_origin || exit 1
 
 
 ---
-### is\_git\_clone()
+### in\_git\_clone()
 
 Tests whether a path is inside a git-cloned dir
 Returns 1 if not.
@@ -201,9 +201,9 @@ User can pass path to test as arg. Defaults to current dir.
 
 ```bash
 
-is_git_clone || exit 1 # current dir is in a git clone?
+in_git_clone || exit 1 # current dir is in a git clone?
 
-is_git_clone /my/project/file || exit 1 # is file inside a git clone?
+in_git_clone /my/project/file || exit 1 # is file inside a git clone?
 
 ```
 

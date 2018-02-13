@@ -85,7 +85,7 @@ git_info_str() {
 
     (
         __cd $d || exit 1
-        ! is_git_clone && e "can't get git info for $(pwd) - not a git dir" && return 1
+        ! in_git_clone && e "can't get git info for $(pwd) - not a git dir" && return 1
 
         repo="$(git_repo)"
         sha="$(git_sha)"
@@ -133,7 +133,7 @@ _git_info_str() {
 #   echo "I am in a local clone of $GIT_REPO on branch $GIT_BRANCH"
 #
 git_vars() {
-    ! is_git_clone && e "... $PWD is not inside a git repo" && return 1
+    ! in_git_clone && e "... $PWD is not inside a git repo" && return 1
 
     GIT_BRANCH="$(git_branch)" || return 1 ; export GIT_BRANCH
     export GIT_TAG="$(git_tag)"
@@ -190,7 +190,7 @@ check_for_changes() {
     (
         __cd $d || exit 1
 
-        ! is_git_clone && red_e "$(pwd) is not a git dir" && return 1;
+        ! in_git_clone && red_e "$(pwd) is not a git dir" && return 1;
         if git diff-index --quiet HEAD --
         then
             i "... none found."
@@ -248,11 +248,11 @@ sha_in_origin() {
 #
 # @example
 #
-#   is_git_clone || exit 1 # current dir is in a git clone?
+#   in_git_clone || exit 1 # current dir is in a git clone?
 #
-#   is_git_clone /my/project/file || exit 1 # is file inside a git clone?
+#   in_git_clone /my/project/file || exit 1 # is file inside a git clone?
 #
-is_git_clone() {
+in_git_clone() {
     local rc=0
     local d="$1"
     (

@@ -77,8 +77,8 @@ t_git_info_str() {
 }
 
 ### in_git_clone()
-t_is_git_clone() {
-    SUITE="is_git_clone()"
+t_in_git_clone() {
+    SUITE="in_git_clone()"
     run_t t_success_if_git_cloned
     run_t t_default_check_pwd_is_clone_if_no_arg
     run_t t_error_if_git_clone_dir_not_exist
@@ -239,13 +239,13 @@ t_success_if_git_cloned() {
     local rc=0
     local repo=/var/tmp/repo_${FUNCNAME[0]}
     repo_for_test $repo
-    is_git_clone $repo/bash || rc=1
+    in_git_clone $repo/bash || rc=1
     rm -rf $repo
     return $rc
 }
 
 t_error_if_git_clone_dir_not_exist() {
-    is_git_clone /foo/bar 2>&1 | grep "couldn't cd to /foo/bar" >/dev/null
+    in_git_clone /foo/bar 2>&1 | grep "couldn't cd to /foo/bar" >/dev/null
 }
 
 t_default_check_pwd_is_clone_if_no_arg() {
@@ -255,7 +255,7 @@ t_default_check_pwd_is_clone_if_no_arg() {
 
     (
         cd $repo
-        is_git_clone || exit 1
+        in_git_clone || exit 1
     ) || rc=1
 
     rm -rf $repo
