@@ -300,8 +300,7 @@ t_cleanup_keep_plugins() {
     )
     echo "HOME DIR is $__TF_HOME_DIR"
     f=$(find $d $__TF_HOME_DIR -type f 2>/dev/null | sort)
-    exp="$(echo -e "$d/.terraform/plugins/a/1\n$d/.terraform/plugins/b/1\n$d/a.tf\n$d/b.tf")"
-    echo -e "files found:\n>>$f<<\n\nexp:\n>>$exp<<"
+    exp="$(echo -e "$d/.terraform/plugins/a/1\n$d/.terraform/plugins/b/1\n$d/a.tf\n$d/b.tf" | sort)"
     [[ "$f" == "$exp" ]]
 }
 
