@@ -3,7 +3,7 @@
 >
 > Functions to make running terraform consistent regardless of version used.
 > 
-> The wrapper function terraform_run honours user-definable handlers to
+> The wrapper function [terraform_run](#terraform_run) honours user-defined handlers to
 > change or add behaviour between invoking terraform subcommands.
 >
 > Env vars can be set to pass options to the key terraform subcommands.
@@ -210,8 +210,8 @@ changes, and also to ensure that the git audit info is accurate.
 > **CAVEAT** - if you are using any hooks to modify your actual infrastructure,
 > make them no-op if in $DEVMODE , as `terraform apply` will not run.
 > See terraform_postapply example below.
-
-**For custom governance vars see [export_governance_vars](#export_governance_vars).**
+>
+> For custom governance vars see [export_governance_vars](#export_governance_vars).
 
 * `terraform_preinit`:
    after [terraform\_cleanup](#terraform_cleanup) but before [terraform\_init](#terraform_init).
