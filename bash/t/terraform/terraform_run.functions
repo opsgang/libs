@@ -357,7 +357,7 @@ t_succeed_if_existing_func_succeeds() {
     )
 }
 
-! . t/functions.t && echo "ERROR $0: could not source functions.t" && exit 1
+! . t/t.functions && echo "ERROR $0: could not source t.functions" && exit 1
 source_src_and_deps "habitual/std.functions habitual/git.functions" || exit 1
 
 run $*

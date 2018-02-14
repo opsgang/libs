@@ -59,11 +59,11 @@ These could then be retrieved with [opsgang/fetch][1].
 
 cd ./bash # all tests must be run from this dir.
 
-# to run all tests for a particular script e.g. habitual/FOOB.functions:
-t/habitual/FOOB.functions
+# to run all tests for a particular script e.g. habitual/std.functions:
+t/habitual/std.functions
 
 # to run individual tests for a script e.g. for habitual/functions
-t/habitual/FOOB.functions t_can_source_multiple_files t_check_var_defined
+t/habitual/std.functions t_can_source_multiple_files t_check_var_defined
 
 # to run all tests for all scripts under ./habitual
 t() {
@@ -71,11 +71,12 @@ t() {
     [[ "$(basename $(realpath .))" != "bash" ]] && echo 'ERROR: run from ./bash dir' && return 1
     [[ -z "$suite" ]] && echo 'ERROR: pass suite name' >&2 && return 1
 
-    find $suite -path './t' -prune -o -name '*.functions' -print
+    libs=$(find $suite -path './t' -prune -o -name '*.functions' -print)
     for lib in $libs; do
         rc=0
-        [[ ! -x "t/$lib" ]] && echo "no tests for $lib" && continue
-        t/$lib || rc=1
+        f="t/${lib#./}"
+        [[ ! -x "$f" ]] && echo "no tests for $lib" && continue
+        $f || rc=1
     done
 
     return $rc

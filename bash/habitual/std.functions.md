@@ -1,5 +1,17 @@
 # habitual/std.functions
+
+<
+< Functions used frequently, including stdout/stderr log msgs
+<
+
+* [GLOBALS](#globals)
+
+* [FUNCTIONS](#functions)
+    * [MISC. FUNCTIONS](#misc-functions)
+    * [LOG MESSAGE FUNCTIONS](#log-message-functions)
+
 ---
+
 # GLOBALS
 
 * `$DEBUG`: _... set in env to non-empty value to print debug messages to STDERR (See [d()](#d))_
@@ -9,6 +21,7 @@
 * `$QUIET`: _... set in env to non-empty value to silence all messages apart from errors_
     * reads env var `$QUIET`
     * or default val: `empty string`
+
 
 
 # FUNCTIONS
@@ -56,6 +69,7 @@ source_files "./foo" "/bar/spaces\ in-name"
 
 
 ---
+
 ### required\_vars()
 
 Checks a list of vars for undefined
@@ -75,6 +89,7 @@ required_vars "FOO BAR" || exit 1
 
 
 ---
+
 ### str\_to\_safe\_chars()
 
 Prints a user-passed *single-line* str with all instances of certain chars
@@ -141,12 +156,14 @@ str_to_safe_chars "from repo: <git@github.com/me/foo>" '_' '[:alnum:]_-'
 
 
 ---
+
 ### safe\_chars\_def\_list()
 
 Prints default list of allowed chars for
 [str_to_safe_chars()](#str_to_safe_chars)
 
 ---
+
 ### envsubst\_tokens\_list()
 
 produces the SHELL-FORMAT arg suitable for
@@ -168,6 +185,7 @@ str=envsubst_tokens_list "FOO BAR"
 
 
 ---
+
 ### random\_str()
 
 creates random str of format <datetime>-<integer>-<integer>
@@ -175,6 +193,7 @@ Useful for docker container names (or suffixes) to "guarantee" uniqueness.
 
 
 ---
+
 ### semver\_a\_ge\_b()
 
 compares 2 semver strs and returns success if arg1 is >= arg2.
@@ -199,6 +218,7 @@ semver_a_ge_b 0.99.0-beta V0.99.0-alpha # true (as beta beats alpha)
 
 
 ---
+
 ### export\_build\_url()
 
 Exports $BUILD_URL if available from a number of possible sources.
@@ -218,6 +238,7 @@ possible to construct it.
 
 
 ---
+
 ## LOG MESSAGE FUNCTIONS
 ---
 ### e()
@@ -248,6 +269,7 @@ _\n_ within a str is also treated as newline.
 
 
 ---
+
 ### i()
 
 prints INFO msg (STDOUT) with context prefix.
@@ -270,6 +292,7 @@ i "msg line 1" "line 2\nline3"
 
 
 ---
+
 ### d()
 
 prints DEBUG msg (STDERR) with context prefix.
@@ -286,28 +309,34 @@ d "msg line 1" "line 2\nline3"
 
 
 ---
+
 ### red\_e()
 
 as with e(), but msg text is coloured
 
 ---
+
 ### bold\_i()
 
 as with i(), but msg text is highlighted
 
 ---
+
 ### yellow\_i()
 
 as with i(), but msg text is coloured.
 
 ---
+
 ### green\_i()
 
 as with i(), but msg text is coloured.
 
 ---
+
 ### blue\_i()
 
 as with i(), but msg text is coloured.
 
 ---
+

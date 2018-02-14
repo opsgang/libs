@@ -1,7 +1,13 @@
 # vim: et sr sw=4 ts=4 smartindent syntax=sh:
-# ... must source habitual/std.functions before calling any of these
-first
 #
+# @overview
+# >
+# > Convenience funcs for git commands that get config info about a repo.
+# >
+# > Additionally funcs to verify the state of a repo.
+# >
+# > Source habitual/std.functions before calling functions in here.
+# >
 
 # path to git binary
 GIT="${GIT:-git --no-pager}"

@@ -1,5 +1,24 @@
 # terraform/terraform\_run.functions
+
+>
+> Functions to make running terraform consistent regardless of version used.
+> 
+> The wrapper function terraform_run honours user-definable handlers to
+> change or add behaviour between invoking terraform subcommands.
+>
+> Env vars can be set to pass options to the key terraform subcommands.
+>
+> Your terraform code is expected to be in a git repo.
+>
+> Source habitual/{std,git}.functions before calling functions in here.
+>
+
+* [GLOBALS](#globals)
+
+* [FUNCTIONS](#functions)
+
 ---
+
 # GLOBALS
 
 * `$TERRAFORM`: _... path to terraform binary - set this in env or make sure it is in your PATH_
@@ -27,9 +46,9 @@
     * or default val: `empty string`
 
 
+
 # FUNCTIONS
 
-* [custom\_governance\_vars()](#custom_governance_vars)
 * [export\_governance\_vars()](#export_governance_vars)
 * [tf()](#tf)
 * [terraform\_version()](#terraform_version)
@@ -40,7 +59,7 @@
 
 ---
 
-### custom\_governance\_vars()
+### export\_governance\_vars()
 
 Exports some default TF_VAR_ env vars.
 
@@ -69,35 +88,36 @@ that exports vars of your own devising.
 #### Example
 
 ```bash
-# ... using default governance vars in terraform:
-variable "git_user"  {}
-variable "git_info"  {}
-variable "build_url" {}
+   # ... using default governance vars in terraform:
+   variable "git_user"  {}
+   variable "git_info"  {}
+   variable "build_url" {}
 
-resource "aws_instance" "foo" {
-  ami           = "i-12345678"
-  instance_type = "t2.nano"
-  tags {
-    deployer  = "${var.git_user}"
-    git_info  = "${var.git_info}"
-    build_url = "${var.build_url}"
-  }
-}
+   resource "aws_instance" "foo" {
+     ami           = "i-12345678"
+     instance_type = "t2.nano"
+     tags {
+       deployer  = "${var.git_user}"
+       git_info  = "${var.git_info}"
+       build_url = "${var.build_url}"
+     }
+   }
 
-# ... setting your own additional vars:
-#     - define custom_governance_vars() func.
-#     - call export_governance_vars.
-custom_governance_vars() {
-    TF_VAR_aws_user=$(aws iam get-user --query 'User.UserName' --output text) || return 1
-    export $TF_VAR_aws_user
-}
+   # ... setting your own additional vars:
+   #     - define custom_governance_vars() func.
+   #     - call export_governance_vars.
+   custom_governance_vars() {
+       TF_VAR_aws_user=$(aws iam get-user --query 'User.UserName' --output text) || return 1
+       export $TF_VAR_aws_user
+   }
 
-export_governance_vars || exit 1 # now use var.aws_user in your terraform
+   export_governance_vars || exit 1 # now use var.aws_user in your terraform
 
 ```
 
 
 ---
+
 ### tf()
 
 Returns the path to the terraform binary.
@@ -106,6 +126,7 @@ Optionally, user can set $TERRAFORM in env, to force the use of a particular bin
 
 
 ---
+
 ### terraform\_version()
 
 Runs terraform --version.
@@ -116,6 +137,7 @@ Affected by [global](#globals) $TERRAFORM.
 
 
 ---
+
 ### terraform\_cleanup()
 
 Deletes any terraform cache or downloaded state files from the local workspace.
@@ -129,6 +151,7 @@ and any downloaded plugins will not be deleted (to save some run time).
 
 
 ---
+
 ### terraform\_init()
 
 Will run terraform subcommands to initialise / fetch remote state, any modules and plugins.
@@ -137,6 +160,7 @@ Some [globals](#globals) - $TERRAFORM, $TERRAFORM_INIT_OPTS, TERRAFORM_GET_OPTS 
 
 
 ---
+
 ### terraform\_apply()
 
 Runs `terraform apply` - for v0.11.0+, will add the -auto-approve to run it non-interactively.
@@ -149,6 +173,7 @@ When $DEVMODE is set, `apply` is not actually run.
 
 
 ---
+
 ### terraform\_run()
 
 Wrapper cmd to perform terraform subcommands for `init` (or `remote cfg`/`get`), `plan`, `apply`.
@@ -234,3 +259,4 @@ changes, and also to ensure that the git audit info is accurate.
 
 
 ---
+

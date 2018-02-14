@@ -47,6 +47,16 @@ Now see [the example](#example).
 
 ## Format Rules
 
+### overview annotation
+
+This will appear under the h1 header at the top of the rendered doc.
+
+Can be multiline.
+
+Valid _overview_ annotation: line that starts exactly `# @overview`.
+
+All subsequent lines that start with `# ` are considered part of the overview.
+
 ### section annotation
 
 Must be a single line.
@@ -181,6 +191,8 @@ function bar() {
 * [GLOBALS](#globals)
 
 * [FUNCTIONS](#functions)
+    * [String Functions](#string-functions)
+    * [Useless Functions](#useless-functions)
 
 ---
 # GLOBALS
@@ -240,6 +252,8 @@ the glory of [foo()](#foo) <-- see this inline link.
         * [GLOBALS](#globals)
 
         * [FUNCTIONS](#functions)
+            * [String Functions](#string-functions)
+            * [Useless Functions](#useless-functions)
 
         ---
 

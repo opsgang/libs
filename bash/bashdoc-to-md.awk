@@ -6,6 +6,7 @@
 # by Stanislav Seletskiy
 #
 # - simplified to only handle @description and @example annotations.
+# - allows summary of contents using @overview
 # - allows grouping of functions using @section delimiter.
 # - document global vars
 #   - comment on line directly above var is assumed to be optional var desc.
@@ -161,6 +162,10 @@ in_desc {
 /^# @section/ {
 
         sub(/^# @section /, "")
+        url = $0
+        gsub(/\W+/, "-", url)
+
+        sectoc = sectoc "    * [" $0 "]" "(#" tolower(url) ")\n"
 
         ftoc = ftoc "\n## " $0 "\n---"
 
@@ -193,7 +198,7 @@ in_example {
 
     doc = doc "\n" strip_md(render("h3", name)) "\n" docblock "\n\n" "---\n"
 
-    url = name
+    url = tolower(name)
     gsub(/\W/, "", url)
 
     ftoc = ftoc "\n" "* [" name "](#" url ")"
@@ -209,6 +214,9 @@ END {
         vardoc = "\n# GLOBALS\n" vardoc "\n"
         if (ftoc) {
             toptoc = "\n* [GLOBALS](#globals)\n\n* [FUNCTIONS](#functions)\n"
+            if (sectoc) {
+                toptoc = toptoc sectoc
+            }
         }
     }
     fn = FILENAME

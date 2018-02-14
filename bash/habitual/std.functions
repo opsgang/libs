@@ -1,5 +1,10 @@
 # vim: et sr sw=4 ts=4 smartindent syntax=sh:
 
+# @overview
+# <
+# < Functions used frequently, including stdout/stderr log msgs
+# <
+
 #####################################################################
 # @section MISC. FUNCTIONS
 #####################################################################

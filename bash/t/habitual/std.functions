@@ -396,7 +396,7 @@ t_prefix_when_run_in_sourced_file() {
     )
 }
 
-! . t/functions.t && echo "ERROR $0: could not source functions.t" && exit 1
+! . t/t.functions && echo "ERROR $0: could not source t.functions" && exit 1
 source_src_and_deps || exit 1
 run $*
 
