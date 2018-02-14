@@ -23,7 +23,7 @@ build:
         [[ $rc -eq 0 ]]
       )
 
-  on_success: /bash/bundles/release
+  on_success: ./bash/bundles/release
 
 integrations:
   hub:
