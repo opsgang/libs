@@ -58,7 +58,7 @@ checkout_tag() {
 
 ### git_branch()
 t_git_branch() {
-    SUITE="git_branch()"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_error_if_not_a_git_dir
     run_t t_if_head_commit_tagged_still_show_branch
     run_t t_if_checkout_tag_show_from_a_tag
@@ -66,19 +66,15 @@ t_git_branch() {
 
 ### git_vars()
 t_git_vars() {
-    SUITE="git_vars()"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_git_vars_on_master
     run_t t_git_vars_checked_out_branch_with_tag
     run_t t_git_vars_checked_out_detached_head_tag
 }
-### git_info_str()
-t_git_info_str() {
-    SUITE="git_info_str()"
-}
 
 ### in_git_clone()
 t_in_git_clone() {
-    SUITE="in_git_clone()"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_success_if_git_cloned
     run_t t_default_check_pwd_is_clone_if_no_arg
     run_t t_error_if_git_clone_dir_not_exist
@@ -86,13 +82,13 @@ t_in_git_clone() {
 
 ### no_unpushed_changes
 t_no_unpushed_changes() {
-    SUITE="no_unpushed_changes"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_skip_check_if_devmode
 }
 
 ### check_for_changes
 t_check_for_changes() {
-    SUITE="check_for_changes()"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_success_if_no_local_changes
     run_t t_error_if_existing_file_changed
     run_t t_no_error_if_file_added
@@ -101,7 +97,7 @@ t_check_for_changes() {
 
 ### sha_in_origin
 t_sha_in_origin() {
-    SUITE="sha_in_origin()"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_success_if_commit_in_origin
     run_t t_fail_if_new_commit_not_in_origin
     run_t t_fail_if_made_up_commit_not_in_origin

@@ -41,14 +41,14 @@ _run_safe_chars() {
 
 ### source_files()
 t_source_files() {
-    SUITE="source_files()"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_will_error_if_file_can_not_be_sourced
     run_t t_can_source_multiple_files
 }
 
 ### check_var_defined
 t_check_var_defined() {
-    SUITE="check_var_defined()"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_non_empty_var_is_success
     run_t t_unset_var_is_error
     run_t t_empty_var_is_error
@@ -56,14 +56,14 @@ t_check_var_defined() {
 
 ### required_vars()
 t_required_vars() {
-    SUITE="required_vars()"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_success_if_all_vars_defined
     run_t t_error_if_any_vars_missing
 }
 
 ### str_to_safe_chars()
 t_str_to_safe_chars() {
-    SUITE="str_to_safe_chars"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_default_replacement
     run_t t_replacement_str_too_long
     run_t t_safe_aws_tag
@@ -75,7 +75,7 @@ t_str_to_safe_chars() {
 
 ### export_build_url()
 t_export_build_url() {
-    SUITE="export_build_url"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_build_url_if_circleci
     run_t t_build_url_if_travis
     run_t t_build_url_if_jenkins
@@ -167,20 +167,20 @@ t_replace_utf8_char_with_ascii() {
 
 ### envsubst_tokens_list()
 t_envsubst_tokens_list() {
-    SUITE="envsubst_tokens_list"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_create_list_of_tokens
 }
 
 ### random_str()
 # just make sure function exists - can't easily verify randomness!
 t_random_str() {
-    SUITE="random_str()"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_check_random_str_func_exists
 }
 
 ### semver_a_ge_b()
 t_semver_a_ge_b() {
-    SUITE="semver_a_ge_b"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_success_if_a_gt_b
     run_t t_success_if_a_eq_b
     run_t t_works_with_leading_v
@@ -313,7 +313,7 @@ t_will_error_if_file_can_not_be_sourced() {
 # tests that do call it directly (by setting FROM_STACKFRAME)
 # so we get the EXPECTED_PREFIX or EXPECTED_DEBUG_PREFIX
 t_set_log_prefix() {
-    SUITE='set_log_prefix()'
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_prefix_when_run_from_script
     run_t t_prefix_when_run_in_shell
     run_t t_prefix_when_run_from_script_with_debug
@@ -323,7 +323,7 @@ t_set_log_prefix() {
 
 ### d()
 t_d() {
-    SUITE='d()'
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_no_output_if_DEBUG_not_set
     run_t t_output_if_debug_set
     run_t t_no_debug_output_if_QUIET
@@ -331,13 +331,13 @@ t_d() {
 
 ### i()
 t_i() {
-    SUITE='i()'
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_no_i_output_if_QUIET
 }
 
 ### __stacktrace()
 t___stacktrace() {
-    SUITE='__stacktrace'
+    SUITE="${FUNCNAME[0]#t_}()"
     local patt="^t___stacktrace\(\) \(file: $0, line: \d+\).n..run_t\(\) \(file: [^,]+, line: \d+\).n"
     local st=$(FROM_STACKFRAME=0 __stacktrace)
     echo "$st" | grep -P "$patt" >/dev/null

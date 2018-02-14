@@ -58,7 +58,7 @@ setup_terraform_run_stubs() {
 
 ### __run_if_exists
 t___run_if_exists() {
-    SUITE="__run_if_exists()"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_succeed_if_func_not_exist
     run_t t_fail_if_existing_func_fails
     run_t t_succeed_if_existing_func_succeeds
@@ -66,7 +66,7 @@ t___run_if_exists() {
 
 ### tf
 t_tf() {
-    SUITE="tf()"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_tf_path_not_set_or_found
     run_t t_prefer_tf_env_var
     run_t t_use_which_if_tf_var_not_set
@@ -74,7 +74,7 @@ t_tf() {
 
 ### export_governance_vars
 t_export_governance_vars() {
-    SUITE="export_governance_vars()"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_fails_if_not_a_git_repo
     run_t t_fails_if_custom_governance_vars_does
     run_t t_succeeds_if_custom_governance_vars_does
@@ -82,12 +82,14 @@ t_export_governance_vars() {
 
 ### terraform_cleanup
 t_terraform_cleanup() {
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_cleanup_default_behaviour
     run_t t_cleanup_keep_plugins
 }
 
 ### terraform_init
 t_terraform_init() {
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_init_lt_0_9
     run_t t_init_ge_0_9
     run_t t_init_lt_0_9_with_opts
@@ -96,6 +98,7 @@ t_terraform_init() {
 
 ### terraform_apply
 t_terraform_apply() {
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_apply_lt_0_11
     run_t t_apply_ge_0_11
     run_t t_apply_lt_0_11_with_opts
@@ -105,6 +108,7 @@ t_terraform_apply() {
 
 ### terraform_run
 t_terraform_run() {
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_run_in_devmode_skipping
     run_t t_run_full_lifecycle
     run_t t_run_fail_if_bad_working_dir
@@ -285,7 +289,7 @@ t_cleanup_default_behaviour() {
     setup_cleanup || return 1
     (
         cd $d
-        terraform_cleanup
+        terraform_cleanup >/dev/null
     )
     f=$(find $d $__TF_HOME_DIR -type f 2>/dev/null)
     [[ "$(echo "$f" | sort)" == "$(echo -e "$d/a.tf\n$d/b.tf")" ]]
@@ -298,7 +302,6 @@ t_cleanup_keep_plugins() {
         cd $d
         KEEP_PLUGINS=true terraform_cleanup >/dev/null
     )
-    echo "HOME DIR is $__TF_HOME_DIR"
     f=$(find $d $__TF_HOME_DIR -type f 2>/dev/null | sort)
     exp="$(echo -e "$d/.terraform/plugins/a/1\n$d/.terraform/plugins/b/1\n$d/a.tf\n$d/b.tf" | sort)"
     [[ "$f" == "$exp" ]]
