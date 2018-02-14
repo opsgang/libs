@@ -16,7 +16,7 @@ setup_cleanup() {
     [[ -e $htd ]] && ! rm -r $htd && red_e "could not delete $htd" && return 1
 
     mkdir -p $ltd/plugins/{a,b}
-    mkdir -p $htd/checkpoint_foo
+    mkdir -p $htd/checkpoint_foo || red_e "could not create $htd/checkpoint_foo"
 
     touch $bd/terraform.tfstate{.backup,} || return 1
     touch $bd/.terraform/terraform.tfstate{.backup,} || return 1
@@ -84,7 +84,6 @@ t_export_governance_vars() {
 t_terraform_cleanup() {
     run_t t_cleanup_default_behaviour
     run_t t_cleanup_keep_plugins
-    rm -rf $htd 2>/dev/null
 }
 
 ### terraform_init
@@ -300,10 +299,10 @@ t_cleanup_keep_plugins() {
         KEEP_PLUGINS=true terraform_cleanup >/dev/null
     )
     echo "HOME DIR is $__TF_HOME_DIR"
-    find $d $__TF_HOME_DIR -type f
-    f=$(find $d $__TF_HOME_DIR -type f 2>/dev/null)
+    f=$(find $d $__TF_HOME_DIR -type f 2>/dev/null | sort)
     exp="$(echo -e "$d/.terraform/plugins/a/1\n$d/.terraform/plugins/b/1\n$d/a.tf\n$d/b.tf")"
-    [[ "$(echo "$f" | sort)" == "$exp" ]]
+    echo -e "files found:\n>>$f<<\n\nexp:\n>>$exp<<"
+    [[ "$f" == "$exp" ]]
 }
 
 t_tf_path_not_set_or_found() {
