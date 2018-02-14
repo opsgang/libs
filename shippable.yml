@@ -14,13 +14,10 @@ build:
     - sudo apt-get update && sudo apt-get install -y coreutils realpath ;
       cd bash ;
       echo "running tests for bash libs" ;
-      rc=0 ;
-      for suite in std; do
-        libs=$(find $suite -type f | grep -v 'README' | grep -vP '\.(awk|md|markdown|txt)$') ;
-        for lib in $libs; do
-          [[ ! -x "t/$lib" ]] && echo "No executable tests for $lib. Build will fail." && rc=1;
-          ! t/$lib && echo "failure from $lib" && rc=1 ;
-        done ;
+      rc=0 ; libs="$(find . -path './t' -prune -o -name '*.functions' -print)" ;
+      for lib in $libs; do
+        f="t/${lib#./}" ;
+        [[ -x $f ]] && ! $f && echo "failure from $lib" && rc=1 ;
       done ;
       [[ $rc -eq 0 ]]
 
