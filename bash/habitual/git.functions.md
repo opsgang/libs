@@ -1,4 +1,4 @@
-# std/functions.git
+# habitual/git.functions
 ---
 # GLOBALS
 

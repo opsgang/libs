@@ -6,6 +6,8 @@ TL;DR? [Skip to the example](#example)
 
 * [Format Rules](#format-rules)
 
+    * [@overview](#overview)
+
     * [@section](#section-annotation)
 
     * [function docco: @desc](#function-annotation-desc)
@@ -124,6 +126,9 @@ Click [here](#raw-output) to view raw markdown.
 ```bash
 # EXAMPLE: awk -f bashdoc-to-md my_funcs.sh
 
+# @overview
+# > functions to make foo a joy and bar a delight
+
 # GLOBAL VARS - this comment is irrelevant for doc
 # ... and so is this.
 
@@ -170,6 +175,13 @@ function bar() {
 ### RENDERED-OUTPUT
 
 # my\_funcs.sh
+
+> functions to make foo a joy and bar a delight
+
+* [GLOBALS](#globals)
+
+* [FUNCTIONS](#functions)
+
 ---
 # GLOBALS
 
@@ -222,7 +234,15 @@ the glory of [foo()](#foo) <-- see this inline link.
 ### RAW-OUTPUT
 
         # my\_funcs.sh
+
+        > functions to make foo a joy and bar a delight
+
+        * [GLOBALS](#globals)
+
+        * [FUNCTIONS](#functions)
+
         ---
+
         # GLOBALS
         
         * `$FOO`: _... path to foo binary_

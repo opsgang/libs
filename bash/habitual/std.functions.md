@@ -1,4 +1,4 @@
-# std/functions
+# habitual/std.functions
 ---
 # GLOBALS
 

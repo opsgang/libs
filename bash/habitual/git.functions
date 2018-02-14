@@ -1,5 +1,6 @@
 # vim: et sr sw=4 ts=4 smartindent syntax=sh:
-# ... these depend on std/functions and std/functions.log_msgs
+# ... must source habitual/std.functions before calling any of these
+first
 #
 
 # path to git binary

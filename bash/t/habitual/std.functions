@@ -1,7 +1,7 @@
 #!/bin/bash
 # vim: et sr sw=4 ts=4 smartindent syntax=sh:
 #
-# TESTS for std/functions
+# TESTS for habitual/std.functions
 
 # ... for logging functions 
 EXPECTED_PREFIX="$(basename $0)"
