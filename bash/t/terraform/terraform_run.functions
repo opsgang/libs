@@ -4,12 +4,13 @@
 #
 
 __CLEANUP_DIR="/var/tmp/functions.terraform.cleanup"
+__TF_HOME_DIR="$(printf ~)/.terraform.d"
 __HOOKS="terraform_preinit terraform_postinit terraform_preapply terraform_postapply"
 
 setup_cleanup() {
     local bd=$__CLEANUP_DIR
     local ltd="$bd/.terraform"
-    local htd="$(printf ~)/.terraform.d"
+    local htd="$__TF_HOME_DIR"
 
     [[ -e $bd ]] && ! rm -r $bd && red_e "could not delete $bd" && return 1
     [[ -e $htd ]] && ! rm -r $htd && red_e "could not delete $htd" && return 1
@@ -287,7 +288,7 @@ t_cleanup_default_behaviour() {
         cd $d
         terraform_cleanup
     )
-    f=$(find $d ~/.terraform.d -type f 2>/dev/null)
+    f=$(find $d $__TF_HOME_DIR -type f 2>/dev/null)
     [[ "$(echo "$f" | sort)" == "$(echo -e "$d/a.tf\n$d/b.tf")" ]]
 }
 
@@ -298,7 +299,9 @@ t_cleanup_keep_plugins() {
         cd $d
         KEEP_PLUGINS=true terraform_cleanup >/dev/null
     )
-    f=$(find $d ~/.terraform.d -type f 2>/dev/null)
+    echo "HOME DIR is $__TF_HOME_DIR"
+    find $d $__TF_HOME_DIR -type f
+    f=$(find $d $__TF_HOME_DIR -type f 2>/dev/null)
     exp="$(echo -e "$d/.terraform/plugins/a/1\n$d/.terraform/plugins/b/1\n$d/a.tf\n$d/b.tf")"
     [[ "$(echo "$f" | sort)" == "$exp" ]]
 }
