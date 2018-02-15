@@ -1,5 +1,21 @@
-# std/functions.git
+# habitual/git.functions
+
+>
+> Convenience funcs for git commands that get config info about a repo.
+>
+> Additionally funcs to verify the state of a repo.
+>
+> Source habitual/std.functions before calling functions in here.
+>
+
+* [GLOBALS](#globals)
+
+* [FUNCTIONS](#functions)
+    * [GIT INFO FUNCTIONS](#git-info-functions)
+    * [VALIDATION FUNCTIONS](#validation-functions)
+
 ---
+
 # GLOBALS
 
 * `$GIT`: _path to git binary_
@@ -9,6 +25,7 @@
 * `$GIT_SHA_LEN`: _git sha1s will be truncated to this length_
     * reads env var `$GIT_SHA_LEN`
     * or default val: `8`
+
 
 
 # FUNCTIONS
@@ -29,7 +46,7 @@
 * [no\_unpushed\_changes()](#no_unpushed_changes)
 * [check\_for\_changes()](#check_for_changes)
 * [sha\_in\_origin()](#sha_in_origin)
-* [is\_git\_clone()](#is_git_clone)
+* [in\_git\_clone()](#in_git_clone)
 
 ---
 
@@ -39,29 +56,50 @@
 
 Prints branch name (or nothing if you've checked out a tag).
 Returns 1 if current working dir is not in a git repo.
+
+---
+
 ### git\_repo()
 
 Prints remote.origin.url from current dir's git config.
 Empty str if not set.
+
+---
+
 ### git\_sha()
 
 Prints sha of current commit - up to $GIT\_SHA\_LEN chars.
+
+---
+
 ### git\_tag()
 
 Prints out the git-tag on the current commit (exact match only)
 Prints empty str if there is none.
+
+---
+
 ### git\_user()
 
 Prints user.name (from git config)
 Returns 1 if not set.
+
+---
+
 ### git\_email()
 
 Prints user.email (from git config)
 Returns 1 if not set.
+
+---
+
 ### git\_id()
 
 Prints user.name user.email (from git config)
 Returns 1 if user.name not set.
+
+---
+
 ### git\_info\_str()
 
 Outputs a str formed of repo, sha1, tag and branch info.
@@ -80,6 +118,9 @@ out=$(git_info_str /my/project/repo)
 # repo:git@github.com:opsgang/blah sha1:bc342d35 tag:-no tag- branch:master
 
 ```
+
+
+---
 
 ### git\_vars()
 
@@ -108,6 +149,9 @@ echo "I am in a local clone of $GIT_REPO on branch $GIT_BRANCH"
 
 ```
 
+
+---
+
 ## VALIDATION FUNCTIONS
 ---
 ### no\_unpushed\_changes()
@@ -115,7 +159,7 @@ echo "I am in a local clone of $GIT_REPO on branch $GIT_BRANCH"
 runs [check\_for\_changes](#check_for_changes) and 
 [sha_in_origin](#sha_in_origin) for **current dir**.
 
-If $DEVMODE is non-empty, the checks will be skipped.
+If $DEVMODE is set, the checks will be skipped.
 
 #### Example
 
@@ -127,6 +171,9 @@ no_unpushed_changes || exit 1
 DEVMODE=true no_unpushed_changes || exit 1
 
 ```
+
+
+---
 
 ### check\_for\_changes()
 
@@ -143,6 +190,9 @@ If not the current dir is checked.
 check_for_changes "/in/my/cloned/dir" || exit 1
 
 ```
+
+
+---
 
 ### sha\_in\_origin()
 
@@ -166,7 +216,10 @@ sha_in_origin || exit 1
 
 ```
 
-### is\_git\_clone()
+
+---
+
+### in\_git\_clone()
 
 Tests whether a path is inside a git-cloned dir
 Returns 1 if not.
@@ -177,9 +230,12 @@ User can pass path to test as arg. Defaults to current dir.
 
 ```bash
 
-is_git_clone || exit 1 # current dir is in a git clone?
+in_git_clone || exit 1 # current dir is in a git clone?
 
-is_git_clone /my/project/file || exit 1 # is file inside a git clone?
+in_git_clone /my/project/file || exit 1 # is file inside a git clone?
 
 ```
+
+
+---
 

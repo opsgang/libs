@@ -1,5 +1,28 @@
-# std/functions
+# habitual/std.functions
+
+>
+> Functions used frequently, including stdout/stderr log msgs
+>
+
+* [GLOBALS](#globals)
+
+* [FUNCTIONS](#functions)
+    * [MISC. FUNCTIONS](#misc-functions)
+    * [LOG MESSAGE FUNCTIONS](#log-message-functions)
+
 ---
+
+# GLOBALS
+
+* `$DEBUG`: _... set in env to non-empty value to print debug messages to STDERR (See [d()](#d))_
+    * reads env var `$DEBUG`
+    * or default val: `empty string`
+
+* `$QUIET`: _... set in env to non-empty value to silence all messages apart from errors_
+    * reads env var `$QUIET`
+    * or default val: `empty string`
+
+
 
 # FUNCTIONS
 
@@ -12,6 +35,7 @@
 * [envsubst\_tokens\_list()](#envsubst_tokens_list)
 * [random\_str()](#random_str)
 * [semver\_a\_ge\_b()](#semver_a_ge_b)
+* [export\_build\_url()](#export_build_url)
 ## LOG MESSAGE FUNCTIONS
 ---
 * [e()](#e)
@@ -29,10 +53,12 @@
 ---
 ### source\_files()
 
-sources a list of files in to current env.
+Sources a list of files in to your current bash env.
 
-If you have whitespace in your file names, that's your
-own fault.
+> User can set `$IGNORE_MISSING` to skip files that do not exist.
+>
+> However an existing file that is unreadable (due to file perms)
+> or contains bad syntax will still raise an error.
 
 #### Example
 
@@ -41,7 +67,13 @@ source_files "./foo /bar/foo ../foo"
 # or ...
 source_files "./foo" "/bar/spaces\ in-name"
 
+# ... ignore files that don't exist
+IGNORE_MISSING=true source_files "default.cfg env.cfg project.cfg"
+
 ```
+
+
+---
 
 ### required\_vars()
 
@@ -60,6 +92,9 @@ required_vars "FOO BAR" || exit 1
 
 ```
 
+
+---
+
 ### str\_to\_safe\_chars()
 
 Prints a user-passed *single-line* str with all instances of certain chars
@@ -76,16 +111,17 @@ Or to create valid AWS tag values (there is a limited set of valid chars)
 
 * Arg 2: Optional: the replacement char, defaults to `_`
 
-      To use `]` and/or `[` in Arg 2, they must appear at start of pattern in that order
-      (after any leading `!` if you want to specify a disallowed list)
-
-      To use `-` in Arg2, it MUST appear as the last char.
-      You can use named POSIX character classes e.g. [:blank:] or [:alnum:].
+> To use `]` and/or `[` in Arg 2, they must appear at start of pattern in that order
+> (after any leading `!` if you want to specify a disallowed list)
+> 
+> To use `-` in Arg2, it MUST appear as the last char.
+> You can use named POSIX character classes e.g. [:blank:] or [:alnum:].
 
 * Arg 3: Optional: the list of chars to keep (*or replace if prefixed with* `!`)
-      To include a literal `!` in a list to replace, add another exclamation mark.
 
-      The default is strict, replacing all but alphanumerics and these chars:`_.:/=+-@`
+> To include a literal `!` in a list to replace, add another exclamation mark.
+> 
+> The default is strict, replacing all but alphanumerics and these chars:`_.:/=+-@`
 
 Call [safe_chars_def_list](#safe_chars_def_list) to get the default char list.
 
@@ -123,10 +159,16 @@ str_to_safe_chars "from repo: <git@github.com/me/foo>" '_' '[:alnum:]_-'
 
 ```
 
+
+---
+
 ### safe\_chars\_def\_list()
 
 Prints default list of allowed chars for
 [str_to_safe_chars()](#str_to_safe_chars)
+
+---
+
 ### envsubst\_tokens\_list()
 
 produces the SHELL-FORMAT arg suitable for
@@ -146,10 +188,16 @@ str=envsubst_tokens_list "FOO BAR"
 
 ```
 
+
+---
+
 ### random\_str()
 
 creates random str of format <datetime>-<integer>-<integer>
 Useful for docker container names (or suffixes) to "guarantee" uniqueness.
+
+
+---
 
 ### semver\_a\_ge\_b()
 
@@ -172,6 +220,29 @@ semver_a_ge_b v0.99.0 0.99.0   # true (as args are the same, ignoring the leadin
 semver_a_ge_b 0.99.0-beta V0.99.0-alpha # true (as beta beats alpha)
 
 ```
+
+
+---
+
+### export\_build\_url()
+
+Exports $BUILD_URL if available from a number of possible sources.
+
+$BUILD_URL is a link to a CI/CD job's run.
+
+Returns 1 if BUILD_URL can not be determined. 
+
+Use this to annotate your builds and deployments with governance metadata. e.g. the job run
+should show you who built what when.
+
+[shippable](https://shippable.com), [circleci](https://circleci.com) and [jenkins](https://jenkins.io)
+provide an equivalent var. This func just exports it with a standard name.
+
+TravisCI [does not](https://github.com/travis-ci/travis-ci/issues/8935), but it is
+possible to construct it.
+
+
+---
 
 ## LOG MESSAGE FUNCTIONS
 ---
@@ -201,9 +272,13 @@ _\n_ within a str is also treated as newline.
 
 ```
 
+
+---
+
 ### i()
 
-prints INFO msg (STDOUT) with context prefix
+prints INFO msg (STDOUT) with context prefix.
+
 Caller can pass multiple quoted strings as each line
 of the msg.
 _\n_ within a str is also treated as newline.
@@ -220,9 +295,13 @@ i "msg line 1" "line 2\nline3"
 
 ```
 
+
+---
+
 ### d()
 
-prints DEBUG msg (STDOUT) with context prefix
+prints DEBUG msg (STDERR) with context prefix.
+
 Caller can pass multiple quoted strings as each line
 of the msg.
 _\n_ within a str is also treated as newline.
@@ -233,18 +312,36 @@ _\n_ within a str is also treated as newline.
 d "msg line 1" "line 2\nline3"
 ```
 
+
+---
+
 ### red\_e()
 
 as with e(), but msg text is coloured
+
+---
+
 ### bold\_i()
 
 as with i(), but msg text is highlighted
+
+---
+
 ### yellow\_i()
 
 as with i(), but msg text is coloured.
+
+---
+
 ### green\_i()
 
 as with i(), but msg text is coloured.
+
+---
+
 ### blue\_i()
 
 as with i(), but msg text is coloured.
+
+---
+

@@ -1,0 +1,367 @@
+#!/bin/bash
+# vim: et sr sw=4 ts=4 smartindent syntax=sh:
+# TESTS terraform
+#
+
+__CLEANUP_DIR="/var/tmp/functions.terraform.cleanup"
+__TF_HOME_DIR="$(printf ~)/.terraform.d"
+__HOOKS="terraform_preinit terraform_postinit terraform_preapply terraform_postapply"
+
+setup_cleanup() {
+    local bd=$__CLEANUP_DIR
+    local ltd="$bd/.terraform"
+    local htd="$__TF_HOME_DIR"
+
+    [[ -e $bd ]] && ! rm -r $bd && red_e "could not delete $bd" && return 1
+    [[ -e $htd ]] && ! rm -r $htd && red_e "could not delete $htd" && return 1
+
+    mkdir -p $ltd/plugins/{a,b}
+    mkdir -p $htd/checkpoint_foo || red_e "could not create $htd/checkpoint_foo"
+
+    touch $bd/terraform.tfstate{.backup,} || return 1
+    touch $bd/.terraform/terraform.tfstate{.backup,} || return 1
+    touch $bd/.terraform/plugins/{a,b}/1 ||  return 1
+    touch $bd/{a.tf,b.tf} || return 1
+
+}
+
+setup_terraform_stubs() {
+    local v="$1" # terraform version
+    local trc="${2:-0}" # terraform return code
+    TERRAFORM=terraform # use the stub declared in this setup
+
+    stub_terraform_version="$(echo -e "terraform_version() {\necho $v\n}")"
+
+    stub_terraform=$(echo -e "terraform(){\necho \$*; return $trc\n}")
+
+    eval "$stub_terraform_version"
+    eval "$stub_terraform"
+}
+
+setup_terraform_run_stubs() {
+    local v="$1" # terraform version
+    local trc=${2:-0} # terraform return code
+    local nrc=${3:-0} # no_unpushed_changes return code
+    local hook="" f=""
+
+    setup_terraform_stubs "$v" $trc
+
+    stub_no_unpushed_changes="$(echo -e "no_unpushed_changes() {\nreturn $nrc\n}")"
+    eval "$stub_no_unpushed_changes"
+    
+    for hook in $__HOOKS; do
+        f="$(echo -e "$hook() {\necho TEST RAN $hook\n}")"
+        eval "$f"
+    done
+
+}
+
+### __run_if_exists
+t___run_if_exists() {
+    SUITE="${FUNCNAME[0]#t_}()"
+    run_t t_succeed_if_func_not_exist
+    run_t t_fail_if_existing_func_fails
+    run_t t_succeed_if_existing_func_succeeds
+}
+
+### tf
+t_tf() {
+    SUITE="${FUNCNAME[0]#t_}()"
+    run_t t_tf_path_not_set_or_found
+    run_t t_prefer_tf_env_var
+    run_t t_use_which_if_tf_var_not_set
+}
+
+### export_governance_vars
+t_export_governance_vars() {
+    SUITE="${FUNCNAME[0]#t_}()"
+    run_t t_fails_if_not_a_git_repo
+    run_t t_fails_if_custom_governance_vars_does
+    run_t t_succeeds_if_custom_governance_vars_does
+}
+
+### terraform_cleanup
+t_terraform_cleanup() {
+    SUITE="${FUNCNAME[0]#t_}()"
+    run_t t_cleanup_default_behaviour
+    run_t t_cleanup_keep_plugins
+}
+
+### terraform_init
+t_terraform_init() {
+    SUITE="${FUNCNAME[0]#t_}()"
+    run_t t_init_lt_0_9
+    run_t t_init_ge_0_9
+    run_t t_init_lt_0_9_with_opts
+    run_t t_init_ge_0_9_with_opts
+}
+
+### terraform_apply
+t_terraform_apply() {
+    SUITE="${FUNCNAME[0]#t_}()"
+    run_t t_apply_lt_0_11
+    run_t t_apply_ge_0_11
+    run_t t_apply_lt_0_11_with_opts
+    run_t t_apply_ge_0_11_with_opts
+    run_t t_apply_skip_if_devmode
+}
+
+### terraform_run
+t_terraform_run() {
+    SUITE="${FUNCNAME[0]#t_}()"
+    run_t t_run_in_devmode_skipping
+    run_t t_run_full_lifecycle
+    run_t t_run_fail_if_bad_working_dir
+}
+
+t_fails_if_not_a_git_repo() {
+    local d=/var/tmp/${FUNCNAME[0]}
+    local rc=0
+    rm -rf $d 2>/dev/null ; mkdir -p $d
+    (
+        cd $d
+        o=$(export_governance_vars 2>&1)
+        [[ $? -ne 0 ]] && echo "$o" | grep 'is not inside a git repo' >/dev/null
+    ) || rc=1
+    rm -rf $d 2>/dev/null ; return $rc
+}
+
+t_fails_if_custom_governance_vars_does() {
+    local d=${FUNCNAME[0]}
+    local rc=0
+    rm -rf $d 2>/dev/null ; mkdir -p $d
+    (
+        cd $d
+        custom_governance_vars() {
+            return 1
+        }
+        o=$(export_governance_vars 2>&1)
+        [[ $? -ne 0 ]] && echo "$o" | grep '... failed' >/dev/null
+    ) || rc=1
+    rm -rf $d 2>/dev/null ; return $rc
+}
+
+t_succeeds_if_custom_governance_vars_does() {
+    local d=${FUNCNAME[0]}
+    local rc=0
+    rm -rf $d 2>/dev/null ; mkdir -p $d
+    (
+        cd $d
+        custom_governance_vars() {
+            export TF_VAR_foo="true"
+            return 0
+        }
+
+        export_governance_vars && [[ "$TF_VAR_foo" == "true" ]]
+    ) || rc=1
+    rm -rf $d 2>/dev/null ; return $rc
+}
+
+t_run_in_devmode_skipping() {
+    (
+        set -o pipefail
+        setup_terraform_stubs 0.8.8
+        o=$(DEVMODE=true terraform_run 2>&1) || return 1
+        echo "$o" | grep 'skipping git checks' >/dev/null || return 1
+        echo "$o" | grep 'skipping terraform apply' >/dev/null || return 1
+    )
+}
+
+t_run_full_lifecycle() {
+    local exp="TEST RAN terraform_preinit\nget\nremote config\nTEST RAN terraform_postinit\nplan"
+    exp="$exp\nTEST RAN terraform_preapply\napply\nTEST RAN terraform_postapply"
+
+    (
+        set -o pipefail
+        setup_terraform_run_stubs 0.8.8
+        o=$(QUIET=true terraform_run 2>&1) || return 1
+        [[ "$o" == "$(echo -e "$exp")" ]]
+    )
+}
+
+t_run_fail_if_bad_working_dir() {
+    d=/does/not/exist
+    (
+        setup_terraform_stubs 0.10.100
+        o=$(QUIET=true terraform_run $d 2>&1)
+        [[ $? -ne 0 ]] && echo "$o" | grep 'could not change to /does/not/exist' >/dev/null
+    )
+}
+
+t_apply_lt_0_11() {
+    (
+        set -o pipefail
+        setup_terraform_stubs 0.10.100
+        o=$(terraform_apply 2>&1)
+        [[ $? -eq 0 ]] && [[ $(echo "$o" | tail -n 1) == $(echo -e "apply") ]]
+    )
+}
+
+t_apply_ge_0_11() {
+    (
+        set -o pipefail
+        setup_terraform_stubs 0.11.0
+        o=$(terraform_apply 2>&1)
+        [[ $? -eq 0 ]] && [[ $(echo "$o" | tail -n 1) == $(echo -e "apply -auto-approve") ]]
+    )
+}
+
+t_apply_lt_0_11_with_opts() {
+    (
+        set -o pipefail
+        local __ao="applyA applyB applyC"
+        TERRAFORM_APPLY_OPTS="$__ao"
+        setup_terraform_stubs 0.10.100
+        o=$(terraform_apply 2>&1)
+        [[ $? -eq 0 ]] && [[ $(echo "$o" | tail -n 1) == $(echo -e "apply $__ao") ]]
+    )
+}
+
+t_apply_ge_0_11_with_opts() {
+    (
+        set -o pipefail
+        local __ao="applyA applyB applyC"
+        TERRAFORM_APPLY_OPTS="$__ao"
+        setup_terraform_stubs 0.11.0
+        o=$(terraform_apply 2>&1)
+        [[ $? -eq 0 ]] && [[ $(echo "$o" | tail -n 1) == $(echo -e "apply $__ao -auto-approve") ]]
+    )
+}
+
+t_apply_skip_if_devmode() {
+    (
+        set -o pipefail
+        setup_terraform_stubs 0.11.0
+        DEVMODE=true
+        o=$(terraform_apply 2>&1)
+        [[ $? -eq 0 ]] && [[ $(echo "$o" | tail -n 1) =~ skipping\ terraform\ apply ]]
+    )
+}
+
+# ... should run get, then remote config
+t_init_lt_0_9() {
+    (
+        set -o pipefail
+        setup_terraform_stubs 0.8.8
+        o=$(terraform_init 2>&1)
+        [[ $? -eq 0 ]] && [[ $(echo "$o" | tail -n 2) == $(echo -e "get\nremote config") ]]
+    )
+}
+
+# ... should run init
+t_init_ge_0_9() {
+    (
+        set -o pipefail
+        setup_terraform_stubs 0.9.0
+        o=$(terraform_init 2>&1)
+        [[ $? -eq 0 ]] && [[ $(echo "$o" | tail -n 1) == $(echo -e "init") ]]
+    )
+}
+
+t_init_lt_0_9_with_opts() {
+    (
+        set -o pipefail
+        local __go="geta getb getc"
+        local __io="remote_configA remote_configB"
+        TERRAFORM_GET_OPTS="$__go"
+        TERRAFORM_INIT_OPTS="$__io"
+        setup_terraform_stubs 0.8.8
+        o=$(terraform_init 2>&1)
+        [[ $? -eq 0 ]] && [[ $(echo "$o" | tail -n 2) == $(echo -e "get $__go\nremote config $__io") ]]
+    )
+}
+
+t_init_ge_0_9_with_opts() {
+    (
+        set -o pipefail
+        local __go="geta getb getc" # should be ignored with this tf version
+        local __io="initA initB"
+        TERRAFORM_GET_OPTS="$__go"
+        TERRAFORM_INIT_OPTS="$__io"
+        setup_terraform_stubs 0.9.0
+        o=$(terraform_init 2>&1)
+        [[ $? -eq 0 ]] && [[ $(echo "$o" | tail -n 1) == $(echo -e "init $__io") ]]
+    )
+}
+
+t_cleanup_default_behaviour() {
+    local d=$__CLEANUP_DIR
+    setup_cleanup || return 1
+    (
+        cd $d
+        terraform_cleanup >/dev/null
+    )
+    f=$(find $d $__TF_HOME_DIR -type f 2>/dev/null)
+    [[ "$(echo "$f" | sort)" == "$(echo -e "$d/a.tf\n$d/b.tf")" ]]
+}
+
+t_cleanup_keep_plugins() {
+    local d=$__CLEANUP_DIR
+    setup_cleanup || return 1
+    (
+        cd $d
+        KEEP_PLUGINS=true terraform_cleanup >/dev/null
+    )
+    f=$(find $d $__TF_HOME_DIR -type f 2>/dev/null | sort)
+    exp="$(echo -e "$d/.terraform/plugins/a/1\n$d/.terraform/plugins/b/1\n$d/a.tf\n$d/b.tf" | sort)"
+    [[ "$f" == "$exp" ]]
+}
+
+t_tf_path_not_set_or_found() {
+    (
+        TERRAFORM="" ;
+        which() { # will override which, used in tf() if $TERRAFORM not set
+            return 1
+        }
+
+        a=$(tf 2>&1) ; [[ $? -ne 0 ]] && echo $a | grep 'can not locate terraform' >/dev/null
+    )
+}
+
+t_prefer_tf_env_var() {
+    (
+        TERRAFORM=/use/this/path
+        which() {
+            echo "/don't/use/this/path"
+        }
+        a=$(tf) ; [[ $? -eq 0 ]] && echo $a | grep '^/use/this/path$' >/dev/null
+    )
+}
+
+t_use_which_if_tf_var_not_set () {
+    (
+        TERRAFORM="" ;
+        which() {
+            echo "/use/this/path"
+        }
+        a=$(tf) ; [[ $? -eq 0 ]] && echo $a | grep '^/use/this/path$' >/dev/null
+    )
+}
+
+t_succeed_if_func_not_exist() {
+    __run_if_exists this_func_does_not_exist
+}
+
+t_fail_if_existing_func_fails() {
+    (
+        ___boo() {
+            return 1
+        }
+        ! __run_if_exists ___boo >/dev/null 2>&1
+    )
+}
+
+t_succeed_if_existing_func_succeeds() {
+    (
+        ___boo() {
+            echo "BOO"
+        }
+        a=$(__run_if_exists ___boo)
+        [[ $? -eq 0 ]] && echo $a | grep -P '^BOO$' >/dev/null
+    )
+}
+
+! . t/t.functions && echo "ERROR $0: could not source t.functions" && exit 1
+source_src_and_deps "habitual/std.functions habitual/git.functions" || exit 1
+
+run $*

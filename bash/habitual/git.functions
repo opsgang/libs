@@ -1,11 +1,13 @@
 # vim: et sr sw=4 ts=4 smartindent syntax=sh:
-# ... these depend on std/functions and std/functions.log_msgs
 #
-
-# TODO:   run_t GIT_INFO_is_sanitised
-#    # ... sanitised string (suitable as unquoted val of var or, for example, aws tag value)
-#    export GIT_INFO=$(echo ${RAW_GIT_INFO} | tr -c '[[:alnum:] _.:/=+-@\n]' '_')
-#    cd $_pwd
+# @overview
+# >
+# > Convenience funcs for git commands that get config info about a repo.
+# >
+# > Additionally funcs to verify the state of a repo.
+# >
+# > Source habitual/std.functions before calling functions in here.
+# >
 
 # path to git binary
 GIT="${GIT:-git --no-pager}"
@@ -90,7 +92,7 @@ git_info_str() {
 
     (
         __cd $d || exit 1
-        ! is_git_clone && e "can't get git info for $(pwd) - not a git dir" && return 1
+        ! in_git_clone && e "can't get git info for $(pwd) - not a git dir" && return 1
 
         repo="$(git_repo)"
         sha="$(git_sha)"
@@ -138,7 +140,7 @@ _git_info_str() {
 #   echo "I am in a local clone of $GIT_REPO on branch $GIT_BRANCH"
 #
 git_vars() {
-    ! is_git_clone && e "... $PWD is not inside a git repo" && return 1
+    ! in_git_clone && e "... $PWD is not inside a git repo" && return 1
 
     GIT_BRANCH="$(git_branch)" || return 1 ; export GIT_BRANCH
     export GIT_TAG="$(git_tag)"
@@ -158,7 +160,7 @@ git_vars() {
 # @desc runs [check\_for\_changes](#check_for_changes) and 
 # [sha_in_origin](#sha_in_origin) for **current dir**.
 #
-# If $DEVMODE is non-empty, the checks will be skipped.
+# If $DEVMODE is set, the checks will be skipped.
 #
 # @example
 #   # ... check whether what I'm deploying is reproducible
@@ -195,7 +197,7 @@ check_for_changes() {
     (
         __cd $d || exit 1
 
-        ! is_git_clone && red_e "$(pwd) is not a git dir" && return 1;
+        ! in_git_clone && red_e "$(pwd) is not a git dir" && return 1;
         if git diff-index --quiet HEAD --
         then
             i "... none found."
@@ -253,11 +255,11 @@ sha_in_origin() {
 #
 # @example
 #
-#   is_git_clone || exit 1 # current dir is in a git clone?
+#   in_git_clone || exit 1 # current dir is in a git clone?
 #
-#   is_git_clone /my/project/file || exit 1 # is file inside a git clone?
+#   in_git_clone /my/project/file || exit 1 # is file inside a git clone?
 #
-is_git_clone() {
+in_git_clone() {
     local rc=0
     local d="$1"
     (

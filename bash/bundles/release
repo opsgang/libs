@@ -1,0 +1,182 @@
+# vim: et sr sw=4 ts=4 smartindent syntax=sh:
+#
+GH_ORG=opsgang
+GHR_URL="https://github.com/tcnksm/ghr/releases/download/v0.5.4/ghr_v0.5.4_linux_amd64.zip"
+
+BASE_DIR="$(pwd)/bash"
+RELEASE_DIR="$(pwd)/release-artefacts"
+TMPL_FILE="$BASE_DIR/bundles/sourcelibs.tmpl"
+
+release() {
+    local rd="$RELEASE_DIR"
+    local tag="" c="" # git tag, sha1 of tag
+
+    rm -rf $RELEASE_DIR 2>/dev/null
+
+    if [[ "$IS_GIT_TAG" == "true" ]] || [[ "$IS_RELEASE" == "true" ]]; then
+
+        echo "shippable vars:"
+        echo "BRANCH: $BRANCH"
+        echo "TAG FOR RELEASE: $GIT_TAG_NAME"
+        echo "IS_RELEASE: $IS_RELEASE"
+        echo "IS_PULL_REQUEST: $IS_PULL_REQUEST"
+
+        tag="$GIT_TAG_NAME"
+
+        [[ -z "$tag" ]] && export && echo '$GIT_TAG_NAME not defined' && return 1
+
+        ! c=$(git rev-list -n1 $tag) && echo "ERROR: couldn't find commit of tag $tag" && return 1
+
+        echo "... will build a release and upload artefacts"
+        echo "... getting ghr from ${GHR}"
+
+        get_ghr || return 1
+        prep_release_artefacts "$rd" "$tag" "$c"  || return 1
+        gh_release "$tag" "$c" "$rd" || return 1
+
+    else
+        echo "... not a tag or release so won't create any bundles."
+        echo "shippable vars:"
+        echo "BRANCH: $BRANCH"
+        echo "IS_PULL_REQUEST: $IS_PULL_REQUEST"
+    fi
+}
+
+get_ghr() {
+    local zip="/var/tmp/ghr.zip"
+    local ghr_url="$GHR_URL"
+    sudo wget -O $zip "${ghr_url}" || return 1
+    sudo apt-get update ; apt-get install -y zip unzip
+
+    sudo unzip -d /usr/bin $zip && sudo rm -f $zip
+
+    [[ -x /usr/bin/ghr ]] # success if installed
+}
+
+gh_release() {
+    [[ -z "$GITHUB_TOKEN" ]] && echo "ERROR: GITHUB_TOKEN must be exported" >&2 && return 1
+    [[ -z "$3" ]] && echo "ERROR: gh_release() needs tag, commit, artefact dir" >&2 && return 1
+
+    local tag="$1" commit="$2" rd="$3"
+    local gh_org="opsgang" body="" commit=""
+
+    ! commit=$(git rev-list -n1 $tag) && echo "ERROR: couldn't find commit of tag $tag" && return 1
+
+    body="$(body_text $tag $commit)" || return 1
+
+    ghr -u $gh_org -c $commit -b "$body" -recreate $tag $rd
+}
+
+body_text() {
+    local tag="$1" commit="$2"
+    local bt='```' # don't want to deal with backticks being interpolated
+    echo "
+## $tag
+
+_Built from sha1 ${commit}_.
+
+## BUNDLES
+
+* habitual.tgz: bash libs that opsgang use all the time. You can too ;)
+
+* terraform_run.tgz: all bash libs to run terraform consistently regardless of version.
+
+> Download one of these, untgz and source the opsgang.sourcelibs file in your bash code.
+>
+> e.g in your own bash code add the line:
+
+${bt}bash
+. /path/to/opsgang.sourcelibs || exit 1
+${bt}
+"
+}
+
+prep_release_artefacts() {
+    local rd="$1" tag="$2" commit="$3"
+    mkdir $rd
+    (
+        cd $rd
+        bundle_habitual $tag $commit || exit 1
+        bundle_terraform_run $tag $commit || exit 1
+    ) || return 1
+}
+
+find_habitual_libs() {
+    (
+        cd $BASE_DIR >/dev/null
+        find habitual -type f -name '*.functions'
+    )
+}
+
+_bundler() {
+    local bundle="$1" tag="$2" commit="$3" libs="$4"
+    mkdir $bundle
+    (
+        cd $bundle
+
+        echo "$libs">.libs
+        sourcelibs_from_template || exit 1
+        rm .libs
+
+        copy_assets "$libs" || exit 1
+
+        version_file $bundle $tag $commit
+        tar czvf $RELEASE_DIR/$bundle.tgz . || exit 1
+    ) || rc=1
+    rm -rf $bundle 2>/dev/null
+    return $rc
+}
+
+bundle_habitual() {
+    local tag="$1" commit="$2"
+    local rc=0 libs=""
+
+    local b='habitual'
+
+    libs="$(find_habitual_libs)"
+
+    _bundler "$b" "$tag" "$commit" "$libs"
+
+}
+
+bundle_terraform_run() {
+    local tag="$1" commit="$2"
+    local rc=0 libs=""
+
+    local b='terraform_run'
+
+    libs="$(find_habitual_libs)"
+    libs="$libs\nterraform/terraform_run.functions"
+    libs="$(echo -e "$libs")"
+
+    _bundler "$b" "$tag" "$commit" "$libs"
+}
+
+copy_assets() {
+    local assets="$*"
+    for asset in $assets; do
+        mkdir -p $(dirname $asset)
+        cp -a $BASE_DIR/$asset $asset
+    done
+}
+
+version_file() {
+    local bundle="$1" tag="$2" commit="$3"
+cat <<EOF >.version
+# v$tag
+#
+# https://github.com/opsgang/libs
+# bundle:    $bundle
+# from tag:  $tag
+# from sha1: $commit
+#
+# Check us out at https://github.com/opsgang
+#
+EOF
+}
+
+sourcelibs_from_template() {
+    sed '/__OPSGANG_LIBS="/r .libs' $TMPL_FILE >opsgang.sourcelibs
+}
+
+release

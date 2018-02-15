@@ -6,6 +6,7 @@
 # by Stanislav Seletskiy
 #
 # - simplified to only handle @description and @example annotations.
+# - allows summary of contents using @overview
 # - allows grouping of functions using @section delimiter.
 # - document global vars
 #   - comment on line directly above var is assumed to be optional var desc.
@@ -121,6 +122,24 @@ function strip_md(text) {
     var_comment = ""
 }
 
+/^# @overview/ {
+    in_overview = 1
+    overviewdoc = ""
+}
+
+in_overview {
+    if (/^[^#]|^ *$/) {
+        in_overview = 0
+    } else {
+        sub(/^# @overview/, "")
+        sub(/^# /, "")
+        sub(/^# *$/, "")
+        if (match($0, /^.+$/)) { # ignore empty lines
+            overviewdoc = overviewdoc "\n" $0
+        }
+    }
+}
+
 /^# @desc/ {
     in_desc = 1
     in_example = 0
@@ -143,8 +162,12 @@ in_desc {
 /^# @section/ {
 
         sub(/^# @section /, "")
+        url = $0
+        gsub(/\W+/, "-", url)
 
-        toc = toc "\n## " $0 "\n---"
+        sectoc = sectoc "    * [" $0 "]" "(#" tolower(url) ")\n"
+
+        ftoc = ftoc "\n## " $0 "\n---"
 
         doc = doc "\n## " $0 "\n---" 
 }
@@ -173,27 +196,36 @@ in_example {
     name = $1
     gsub(/_/, "\\_", name)
 
-    doc = doc "\n" strip_md(render("h3", name)) "\n" docblock
+    doc = doc "\n" strip_md(render("h3", name)) "\n" docblock "\n\n" "---\n"
 
-    url = name
+    url = tolower(name)
     gsub(/\W/, "", url)
 
-    toc = toc "\n" "* [" name "](#" url ")"
+    ftoc = ftoc "\n" "* [" name "](#" url ")"
 
     docblock = ""
 }
 
 END {
+    if (overviewdoc) {
+        overviewdoc = "\n" overviewdoc "\n"
+    }
     if (vardoc) {
-        vardoc = "# GLOBALS\n" vardoc "\n"
+        vardoc = "\n# GLOBALS\n" vardoc "\n"
+        if (ftoc) {
+            toptoc = "\n* [GLOBALS](#globals)\n\n* [FUNCTIONS](#functions)\n"
+            if (sectoc) {
+                toptoc = toptoc sectoc
+            }
+        }
     }
     fn = FILENAME
     sub(/^\.\//, "", fn)
     gsub(/_/, "\\_", fn)
-    print "# " fn "\n" "---"
+    print "# " fn overviewdoc toptoc "\n---"
     print vardoc
-    print "# FUNCTIONS"
-    print toc
+    print "\n# FUNCTIONS"
+    print ftoc
     print "\n---"
     print doc
 }

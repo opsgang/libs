@@ -58,7 +58,7 @@ checkout_tag() {
 
 ### git_branch()
 t_git_branch() {
-    SUITE="git_branch()"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_error_if_not_a_git_dir
     run_t t_if_head_commit_tagged_still_show_branch
     run_t t_if_checkout_tag_show_from_a_tag
@@ -66,19 +66,15 @@ t_git_branch() {
 
 ### git_vars()
 t_git_vars() {
-    SUITE="git_vars()"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_git_vars_on_master
     run_t t_git_vars_checked_out_branch_with_tag
     run_t t_git_vars_checked_out_detached_head_tag
 }
-### git_info_str()
-t_git_info_str() {
-    SUITE="git_info_str()"
-}
 
 ### in_git_clone()
-t_is_git_clone() {
-    SUITE="is_git_clone()"
+t_in_git_clone() {
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_success_if_git_cloned
     run_t t_default_check_pwd_is_clone_if_no_arg
     run_t t_error_if_git_clone_dir_not_exist
@@ -86,13 +82,13 @@ t_is_git_clone() {
 
 ### no_unpushed_changes
 t_no_unpushed_changes() {
-    SUITE="no_unpushed_changes"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_skip_check_if_devmode
 }
 
 ### check_for_changes
 t_check_for_changes() {
-    SUITE="check_for_changes()"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_success_if_no_local_changes
     run_t t_error_if_existing_file_changed
     run_t t_no_error_if_file_added
@@ -101,7 +97,7 @@ t_check_for_changes() {
 
 ### sha_in_origin
 t_sha_in_origin() {
-    SUITE="sha_in_origin()"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_success_if_commit_in_origin
     run_t t_fail_if_new_commit_not_in_origin
     run_t t_fail_if_made_up_commit_not_in_origin
@@ -239,13 +235,13 @@ t_success_if_git_cloned() {
     local rc=0
     local repo=/var/tmp/repo_${FUNCNAME[0]}
     repo_for_test $repo
-    is_git_clone $repo/bash || rc=1
+    in_git_clone $repo/bash || rc=1
     rm -rf $repo
     return $rc
 }
 
 t_error_if_git_clone_dir_not_exist() {
-    is_git_clone /foo/bar 2>&1 | grep "couldn't cd to /foo/bar" >/dev/null
+    in_git_clone /foo/bar 2>&1 | grep "couldn't cd to /foo/bar" >/dev/null
 }
 
 t_default_check_pwd_is_clone_if_no_arg() {
@@ -255,7 +251,7 @@ t_default_check_pwd_is_clone_if_no_arg() {
 
     (
         cd $repo
-        is_git_clone || exit 1
+        in_git_clone || exit 1
     ) || rc=1
 
     rm -rf $repo
@@ -395,8 +391,8 @@ t_error_checking_if_not_a_git_dir() {
     return 0
 }
 
-! . t/functions.t && echo "ERROR $0: could not source functions.t" && exit 1
-source_src_and_deps "std/functions" || exit 1
+! . t/t.functions && echo "ERROR $0: could not source t.functions" && exit 1
+source_src_and_deps "habitual/std.functions" || exit 1
 setup || exit 1
 
 run $*

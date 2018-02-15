@@ -1,7 +1,7 @@
 #!/bin/bash
 # vim: et sr sw=4 ts=4 smartindent syntax=sh:
 #
-# TESTS for std/functions
+# TESTS for habitual/std.functions
 
 # ... for logging functions 
 EXPECTED_PREFIX="$(basename $0)"
@@ -41,14 +41,17 @@ _run_safe_chars() {
 
 ### source_files()
 t_source_files() {
-    SUITE="source_files()"
-    run_t t_will_error_if_file_can_not_be_sourced
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_can_source_multiple_files
+    run_t t_fail_if_file_bad_syntax
+    run_t t_fail_if_file_does_not_exist
+    run_t t_succeed_if_missing_file_with_ignore
+    run_t t_fail_if_file_exists_with_ignore
 }
 
 ### check_var_defined
 t_check_var_defined() {
-    SUITE="check_var_defined()"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_non_empty_var_is_success
     run_t t_unset_var_is_error
     run_t t_empty_var_is_error
@@ -56,14 +59,14 @@ t_check_var_defined() {
 
 ### required_vars()
 t_required_vars() {
-    SUITE="required_vars()"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_success_if_all_vars_defined
     run_t t_error_if_any_vars_missing
 }
 
 ### str_to_safe_chars()
 t_str_to_safe_chars() {
-    SUITE="str_to_safe_chars"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_default_replacement
     run_t t_replacement_str_too_long
     run_t t_safe_aws_tag
@@ -71,6 +74,41 @@ t_str_to_safe_chars() {
     run_t t_disallowed_chars_with_exclamation
     run_t t_replace_with_utf8_char
     run_t t_replace_utf8_char_with_ascii
+}
+
+### export_build_url()
+t_export_build_url() {
+    SUITE="${FUNCNAME[0]#t_}()"
+    run_t t_build_url_if_circleci
+    run_t t_build_url_if_travis
+    run_t t_build_url_if_jenkins
+}
+
+t_build_url_if_circleci() {
+    (
+        CIRCLE_BUILD_URL="https://circleci.com/foo/bar/job/123456"
+        export_build_url
+        [[ $? -eq 0 ]] \
+        && [[ $BUILD_URL == $CIRCLE_BUILD_URL ]] \
+        && export -p | grep -Po "\bBUILD_URL=\"$CIRCLE_BUILD_URL\"$" >/dev/null # actually exported
+    )
+}
+
+t_build_url_if_travis() {
+    (
+        TRAVIS="true" TRAVIS_REPO_SLUG="foo/bar" TRAVIS_JOB_ID="123456"
+        export_build_url
+        [[ $? -eq 0 ]] && export -p | grep -Po "\bBUILD_URL=.*" >/dev/null # actually exported
+    )
+}
+
+t_build_url_if_jenkins() {
+    (
+        local url="https://jenkins.example.com/foo/bar/job/123456"
+        BUILD_URL=$url
+        export_build_url
+        [[ $? -eq 0 ]] && export -p | grep -Po "\bBUILD_URL=\"$BUILD_URL\"" >/dev/null
+    )
 }
 
 t_default_replacement() {
@@ -132,20 +170,20 @@ t_replace_utf8_char_with_ascii() {
 
 ### envsubst_tokens_list()
 t_envsubst_tokens_list() {
-    SUITE="envsubst_tokens_list"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_create_list_of_tokens
 }
 
 ### random_str()
 # just make sure function exists - can't easily verify randomness!
 t_random_str() {
-    SUITE="random_str()"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_check_random_str_func_exists
 }
 
 ### semver_a_ge_b()
 t_semver_a_ge_b() {
-    SUITE="semver_a_ge_b"
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_success_if_a_gt_b
     run_t t_success_if_a_eq_b
     run_t t_works_with_leading_v
@@ -249,7 +287,7 @@ t_empty_var_is_error() {
 
 t_can_source_multiple_files() {
     local rc=0 out=""
-    local f="/var/tmp/t_will_error_if_file_can_not_be_sourced"
+    local f="/var/tmp/${FUNCNAME[0]}"
     echo "echo 'foo'">$f.1
     echo "echo 'bar'">$f.2
     out=$(source_files $f.1 $f.2 2>&1)
@@ -258,15 +296,48 @@ t_can_source_multiple_files() {
     return $rc
 }
 
-t_will_error_if_file_can_not_be_sourced() {
+t_fail_if_file_bad_syntax() {
     local rc=0 out=""
-    local f="/var/tmp/t_will_error_if_file_can_not_be_sourced"
+    local f="/var/tmp/${FUNCNAME[0]}"
+    echo "echo 'foo'">$f.1
+    echo 'flumpty \'>$f.2 # flumpty is a bad command. Trust me.
+    echo "echo 'bar'">$f.3
+    ! source_files $f.1 $f.2 $f.3 >/dev/null 2>&1 || rc=1
+    rm $f.1 $f.2 $f.3
+    return $rc
+}
+
+t_fail_if_file_does_not_exist() {
+    local rc=0 out=""
+    local f="/var/tmp/${FUNCNAME[0]}"
     echo "echo 'foo'">$f.1
     echo "echo 'bar'">$f.2
     out=$(source_files $f.1 $f.2 $f.3 2>&1)
-    echo "$out" | grep -P "... can not source $f.3" >/dev/null || rc=1
+    echo "$out" | grep -P "... $f.3 does not exist" >/dev/null || rc=1
     [[ $out =~ ^foo.bar[^-_a-zA-Z0-9] ]] || rc=1
     rm $f.1 $f.2
+    return $rc
+}
+
+t_succeed_if_missing_file_with_ignore() {
+    local rc=0 out=""
+    local f="/var/tmp/${FUNCNAME[0]}"
+    echo "echo 'foo'">$f.1
+    echo "echo 'bar'">$f.3
+    out=$(IGNORE_MISSING=true source_files $f.1 $f.2 $f.3 2>&1) || rc=1
+    [[ $(echo -e "foo\nbar") == "$out" ]] || rc=1
+    rm $f.1 $f.3
+    return $rc
+}
+
+t_fail_if_file_bad_syntax_with_ignore() {
+    local rc=0 out=""
+    local f="/var/tmp/${FUNCNAME[0]}"
+    echo "echo 'foo'">$f.1
+    echo 'flumpty \'>$f.2 # flumpty is a bad command. Trust me.
+    echo "echo 'bar'">$f.3
+    ! IGNORE_MISSING=true source_files $f.1 $f.2 $f.3 >/dev/null 2>&1 || rc=1
+    rm $f.1 $f.2 $f.3
     return $rc
 }
 
@@ -278,7 +349,7 @@ t_will_error_if_file_can_not_be_sourced() {
 # tests that do call it directly (by setting FROM_STACKFRAME)
 # so we get the EXPECTED_PREFIX or EXPECTED_DEBUG_PREFIX
 t_set_log_prefix() {
-    SUITE='set_log_prefix()'
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_prefix_when_run_from_script
     run_t t_prefix_when_run_in_shell
     run_t t_prefix_when_run_from_script_with_debug
@@ -288,14 +359,21 @@ t_set_log_prefix() {
 
 ### d()
 t_d() {
-    SUITE='d()'
+    SUITE="${FUNCNAME[0]#t_}()"
     run_t t_no_output_if_DEBUG_not_set
     run_t t_output_if_debug_set
+    run_t t_no_debug_output_if_QUIET
+}
+
+### i()
+t_i() {
+    SUITE="${FUNCNAME[0]#t_}()"
+    run_t t_no_i_output_if_QUIET
 }
 
 ### __stacktrace()
 t___stacktrace() {
-    SUITE='__stacktrace'
+    SUITE="${FUNCNAME[0]#t_}()"
     local patt="^t___stacktrace\(\) \(file: $0, line: \d+\).n..run_t\(\) \(file: [^,]+, line: \d+\).n"
     local st=$(FROM_STACKFRAME=0 __stacktrace)
     echo "$st" | grep -P "$patt" >/dev/null
@@ -303,8 +381,16 @@ t___stacktrace() {
 
 # DEBUG output contains bash terminal codes for colour ...
 t_output_if_debug_set() {
-    echo "$(DEBUG=true d 'should print')" \
+    echo "$(DEBUG=true d 'should print' 2>&1)" \
     | grep -Po "^DEBUG $EXPECTED_DEBUG_PREFIX:.*should print" >/dev/null
+}
+
+t_no_debug_output_if_QUIET() {
+    [[ "$(QUIET=true DEBUG=true d 'should print nothing' 2>&1)" == "" ]]
+}
+
+t_no_i_output_if_QUIET() {
+    [[ "$(QUIET=true i 'should print nothing' 2>&1)" == "" ]]
 }
 
 t_no_output_if_DEBUG_not_set() {
@@ -346,7 +432,7 @@ t_prefix_when_run_in_sourced_file() {
     )
 }
 
-! . t/functions.t && echo "ERROR $0: could not source functions.t" && exit 1
+! . t/t.functions && echo "ERROR $0: could not source t.functions" && exit 1
 source_src_and_deps || exit 1
 run $*
 

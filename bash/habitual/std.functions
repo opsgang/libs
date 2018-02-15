@@ -1,25 +1,44 @@
 # vim: et sr sw=4 ts=4 smartindent syntax=sh:
 
+# @overview
+# >
+# > Functions used frequently, including stdout/stderr log msgs
+# >
+
 #####################################################################
 # @section MISC. FUNCTIONS
 #####################################################################
 
-# @desc sources a list of files in to current env.
+# @desc Sources a list of files in to your current bash env.
 #
-# If you have whitespace in your file names, that's your
-# own fault.
+# > User can set `$IGNORE_MISSING` to skip files that do not exist.
+# >
+# > However an existing file that is unreadable (due to file perms)
+# > or contains bad syntax will still raise an error.
 #
 # @example
 #   source_files "./foo /bar/foo ../foo"
 #   # or ...
 #   source_files "./foo" "/bar/spaces\ in-name"
 #
+#   # ... ignore files that don't exist
+#   IGNORE_MISSING=true source_files "default.cfg env.cfg project.cfg"
+#
 source_files() {
     local files="$*"
     local f="" rc=0
 
     for f in $files; do
-        ! . $f && e "... can not source $f" && rc=1
+        if [[ -e $f ]]; then
+            d "... sourcing $f"
+            ! . $f && e "... can not source $f" && rc=1
+        else
+            if [[ -z "$IGNORE_MISSING" ]]; then
+                e "... $f does not exist. Can not source." && rc=1
+            else
+                d "... $f does not exist, skipping as \$IGNORE_MISSING set"
+            fi
+        fi
     done
 
     return $rc
@@ -75,16 +94,17 @@ check_var_defined() {
 #
 # * Arg 2: Optional: the replacement char, defaults to `_`
 #
-#       To use `]` and/or `[` in Arg 2, they must appear at start of pattern in that order
-#       (after any leading `!` if you want to specify a disallowed list)
-#
-#       To use `-` in Arg2, it MUST appear as the last char.
-#       You can use named POSIX character classes e.g. [:blank:] or [:alnum:].
+# > To use `]` and/or `[` in Arg 2, they must appear at start of pattern in that order
+# > (after any leading `!` if you want to specify a disallowed list)
+# > 
+# > To use `-` in Arg2, it MUST appear as the last char.
+# > You can use named POSIX character classes e.g. [:blank:] or [:alnum:].
 #
 # * Arg 3: Optional: the list of chars to keep (*or replace if prefixed with* `!`)
-#       To include a literal `!` in a list to replace, add another exclamation mark.
 #
-#       The default is strict, replacing all but alphanumerics and these chars:`_.:/=+-@`
+# > To include a literal `!` in a list to replace, add another exclamation mark.
+# > 
+# > The default is strict, replacing all but alphanumerics and these chars:`_.:/=+-@`
 #
 # Call [safe_chars_def_list](#safe_chars_def_list) to get the default char list.
 #
@@ -241,6 +261,33 @@ _semver_a_gt_b() {
     [[ "$a" == "$b" ]] || [[ $(echo -e "$a\n$b" | sort -V | head -n 1) != "$a" ]]
 }
 
+# @desc Exports $BUILD_URL if available from a number of possible sources.
+#
+# $BUILD_URL is a link to a CI/CD job's run.
+#
+# Returns 1 if BUILD_URL can not be determined. 
+#
+# Use this to annotate your builds and deployments with governance metadata. e.g. the job run
+# should show you who built what when.
+#
+# [shippable](https://shippable.com), [circleci](https://circleci.com) and [jenkins](https://jenkins.io)
+# provide an equivalent var. This func just exports it with a standard name.
+#
+# TravisCI [does not](https://github.com/travis-ci/travis-ci/issues/8935), but it is
+# possible to construct it.
+#
+export_build_url() {
+    if [[ ! -z "$CIRCLE_BUILD_URL" ]]; then
+        BUILD_URL="$CIRCLE_BUILD_URL"
+    elif [[ "$TRAVIS" == "true" ]]; then
+        if required_vars "TRAVIS_REPO_SLUG TRAVIS_JOB_ID"
+        then
+            BUILD_URL="https://travis-ci.org/$TRAVIS_REPO_SLUG/jobs/$TRAVIS_JOB_ID" 
+        fi
+    fi
+    [[ ! -z "$BUILD_URL" ]] && export BUILD_URL
+}
+
 #####################################################################
 # @section LOG MESSAGE FUNCTIONS
 #####################################################################
@@ -271,6 +318,12 @@ __TBLUE="\033[1;34m"
 __TRESET="\033[0m"
 
 __CALLER_REGX="^([^ ]+) ([^ ]+) (.+)$"
+
+# ... set in env to non-empty value to print debug messages to STDERR (See [d()](#d))
+DEBUG=${DEBUG:-}
+
+# ... set in env to non-empty value to silence all messages apart from errors
+QUIET=${QUIET:-}
 
 # if running via bash or sh, use that as prefix,
 # or
@@ -336,7 +389,8 @@ e() {
     done < <(echo -e "TRACE:\n$(__stacktrace)")
 }
 
-# @desc prints INFO msg (STDOUT) with context prefix
+# @desc prints INFO msg (STDOUT) with context prefix.
+#
 # Caller can pass multiple quoted strings as each line
 # of the msg.
 # _\n_ within a str is also treated as newline.
@@ -350,6 +404,7 @@ e() {
 #   # INFO script.sh:main(): ... line 3
 #
 i() {
+    [[ ! -z "$QUIET" ]] && return 0
     local IFS=''
     local pre="INFO $(set_log_prefix)"
     while read line ; do
@@ -357,7 +412,8 @@ i() {
     done < <(echo -e "$*")
 }
 
-# @desc prints DEBUG msg (STDOUT) with context prefix
+# @desc prints DEBUG msg (STDERR) with context prefix.
+#
 # Caller can pass multiple quoted strings as each line
 # of the msg.
 # _\n_ within a str is also treated as newline.
@@ -365,11 +421,12 @@ i() {
 # @example
 #   d "msg line 1" "line 2\nline3"
 d() {
+    [[ ! -z "$QUIET" ]] && return 0
     [[ -z "$DEBUG" ]] && return 0
     local IFS=''
     local pre="DEBUG $(set_log_prefix)"
     while read line ; do
-        echo -e "$pre: ${__TDEBUG}$line${__TRESET}"
+        echo -e "$pre: ${__TDEBUG}$line${__TRESET}" >&2
     done < <(echo -e "$*")
 }
 
@@ -388,6 +445,7 @@ red_e() {
 
 # @desc as with i(), but msg text is highlighted
 bold_i() {
+    [[ ! -z "$QUIET" ]] && return 0
     local IFS=''
     local pre="INFO $(set_log_prefix)"
     while read line ; do
@@ -397,6 +455,7 @@ bold_i() {
 
 # @desc as with i(), but msg text is coloured.
 yellow_i() {
+    [[ ! -z "$QUIET" ]] && return 0
     local IFS=''
     local pre="INFO $(set_log_prefix)"
     while read line ; do
@@ -406,6 +465,7 @@ yellow_i() {
 
 # @desc as with i(), but msg text is coloured.
 green_i() {
+    [[ ! -z "$QUIET" ]] && return 0
     local IFS=''
     local pre="INFO $(set_log_prefix)"
     while read line ; do
@@ -415,6 +475,7 @@ green_i() {
 
 # @desc as with i(), but msg text is coloured.
 blue_i() {
+    [[ ! -z "$QUIET" ]] && return 0
     local IFS=''
     local pre="INFO $(set_log_prefix)"
     while read line ; do

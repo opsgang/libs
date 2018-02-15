@@ -6,6 +6,8 @@ TL;DR? [Skip to the example](#example)
 
 * [Format Rules](#format-rules)
 
+    * [@overview](#overview)
+
     * [@section](#section-annotation)
 
     * [function docco: @desc](#function-annotation-desc)
@@ -20,7 +22,7 @@ TL;DR? [Skip to the example](#example)
 
     * [rendered output](#rendered-output)
 
-    * [raw outpu](#raw-output)
+    * [raw output](#raw-output)
 
  EXAMPLE ANNOTATED SCRIPT
    
@@ -44,6 +46,16 @@ Now see [the example](#example).
 ---
 
 ## Format Rules
+
+### overview annotation
+
+This will appear under the h1 header at the top of the rendered doc.
+
+Can be multiline.
+
+Valid _overview_ annotation: line that starts exactly `# @overview`.
+
+All subsequent lines that start with `# ` are considered part of the overview.
 
 ### section annotation
 
@@ -110,6 +122,8 @@ this is documented as a var set in the current script env.
 If the RHS (quoted or unquoted) is `${some_var:-some default}`
 then the default is also documented.
 
+> Any comment on the line directly preceding the assignment
+> is assumed to be a description of the global var.
 
 ## EXAMPLE
 
@@ -121,6 +135,9 @@ Click [here](#raw-output) to view raw markdown.
 
 ```bash
 # EXAMPLE: awk -f bashdoc-to-md my_funcs.sh
+
+# @overview
+# > functions to make foo a joy and bar a delight
 
 # GLOBAL VARS - this comment is irrelevant for doc
 # ... and so is this.
@@ -168,6 +185,15 @@ function bar() {
 ### RENDERED-OUTPUT
 
 # my\_funcs.sh
+
+> functions to make foo a joy and bar a delight
+
+* [GLOBALS](#globals)
+
+* [FUNCTIONS](#functions)
+    * [String Functions](#string-functions)
+    * [Useless Functions](#useless-functions)
+
 ---
 # GLOBALS
 
@@ -218,52 +244,60 @@ the glory of [foo()](#foo) <-- see this inline link.
 
 
 ### RAW-OUTPUT
-```
-# my\_funcs.sh
----
-# GLOBALS
 
-* `$FOO`: _... path to foo binary_
-    * reads env var `$FOO`
-    * or default val: `echo`
+        # my\_funcs.sh
 
-* `$BAR`
-    * value: `"some string"`
+        > functions to make foo a joy and bar a delight
 
+        * [GLOBALS](#globals)
 
-# FUNCTIONS
+        * [FUNCTIONS](#functions)
+            * [String Functions](#string-functions)
+            * [Useless Functions](#useless-functions)
 
-## String Functions
----
-* [foo()](#foo)
-## Useless Functions
----
-* [bar()](#bar)
+        ---
 
----
-
-## String Functions
----
-### foo()
-
-Prints _foo:_ plus user passed strs.
-
-Return *1* on err. I can use **markdown** here.
-
-#### Example
-
-```bash
-foo "hi!" # foo says hi!
-
-```
-
-## Useless Functions
----
-### bar()
-
-Spurious lesser func when you consider
-the glory of [foo()](#foo) <-- see this inline link.
-
-```
+        # GLOBALS
+        
+        * `$FOO`: _... path to foo binary_
+            * reads env var `$FOO`
+            * or default val: `echo`
+        
+        * `$BAR`
+            * value: `"some string"`
+        
+        
+        # FUNCTIONS
+        
+        ## String Functions
+        ---
+        * [foo()](#foo)
+        ## Useless Functions
+        ---
+        * [bar()](#bar)
+        
+        ---
+        
+        ## String Functions
+        ---
+        ### foo()
+        
+        Prints _foo:_ plus user passed strs.
+        
+        Return *1* on err. I can use **markdown** here.
+        
+        #### Example
+        
+        ```bash
+        foo "hi!" # foo says hi!
+        
+        ```
+        
+        ## Useless Functions
+        ---
+        ### bar()
+        
+        Spurious lesser func when you consider
+        the glory of [foo()](#foo) <-- see this inline link.
 
 **End of RAW-OUTPUT**
