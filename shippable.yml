@@ -11,21 +11,9 @@ env:
 build:
 
   ci:
-    - sudo apt-get update && sudo apt-get install -y coreutils realpath ;
-      if [[ "${GITHUB_TOKEN}x" == "x" ]]; then echo "GITHUB_TOKEN not available" ; fi ;
-      (
-        cd bash ;
-        echo "running tests for bash libs" ;
-        rc=0 ; libs="$(find . -path './t' -prune -o -name '*.functions' -print)" ;
-        for lib in $libs; do
-          f="t/${lib#./}" ;
-          echo -e "\n\nRUNNING $f ..." ;
-          [[ -x $f ]] && ! $f && echo "failure from $lib" && rc=1 ;
-        done ;
-        [[ $rc -eq 0 ]]
-      )
+    - if [[ "${GITHUB_TOKEN}x" == "x" ]]; then echo "GITHUB_TOKEN not available" ; fi || echo "FOUND"
 
-  on_success: ./bash/bundles/release
+  on_success: if [[ "${GITHUB_TOKEN}x" == "x" ]]; then echo "GITHUB_TOKEN not available" ; fi || echo "FOUND"
 
 integrations:
   hub:
