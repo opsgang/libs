@@ -12,6 +12,7 @@ build:
 
   ci:
     - sudo apt-get update && sudo apt-get install -y coreutils realpath ;
+      if [[ "${GITHUB_TOKEN}x" == "x" ]]; then echo "GITHUB_TOKEN not available" ; fi ;
       (
         cd bash ;
         echo "running tests for bash libs" ;
