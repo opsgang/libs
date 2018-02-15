@@ -1,8 +1,8 @@
 # habitual/std.functions
 
-<
-< Functions used frequently, including stdout/stderr log msgs
-<
+>
+> Functions used frequently, including stdout/stderr log msgs
+>
 
 * [GLOBALS](#globals)
 
@@ -53,10 +53,12 @@
 ---
 ### source\_files()
 
-sources a list of files in to current env.
+Sources a list of files in to your current bash env.
 
-If you have whitespace in your file names, that's your
-own fault.
+> User can set `$IGNORE_MISSING` to skip files that do not exist.
+>
+> However an existing file that is unreadable (due to file perms)
+> or contains bad syntax will still raise an error.
 
 #### Example
 
@@ -64,6 +66,9 @@ own fault.
 source_files "./foo /bar/foo ../foo"
 # or ...
 source_files "./foo" "/bar/spaces\ in-name"
+
+# ... ignore files that don't exist
+IGNORE_MISSING=true source_files "default.cfg env.cfg project.cfg"
 
 ```
 

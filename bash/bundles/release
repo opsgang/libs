@@ -1,4 +1,5 @@
 # vim: et sr sw=4 ts=4 smartindent syntax=sh:
+#
 GH_ORG=opsgang
 GHR_URL="https://github.com/tcnksm/ghr/releases/download/v0.5.4/ghr_v0.5.4_linux_amd64.zip"
 
@@ -117,7 +118,7 @@ _bundler() {
         sourcelibs_from_template || exit 1
         rm .libs
 
-        copy_libs "$libs" || exit 1
+        copy_assets "$libs" || exit 1
 
         version_file $bundle $tag $commit
         tar czvf $RELEASE_DIR/$bundle.tgz . || exit 1
@@ -151,11 +152,11 @@ bundle_terraform_run() {
     _bundler "$b" "$tag" "$commit" "$libs"
 }
 
-copy_libs() {
-    local libs="$*"
-    for lib in $libs; do
-        mkdir -p $(dirname $lib)
-        cp -a $BASE_DIR/$lib $lib
+copy_assets() {
+    local assets="$*"
+    for asset in $assets; do
+        mkdir -p $(dirname $asset)
+        cp -a $BASE_DIR/$asset $asset
     done
 }
 

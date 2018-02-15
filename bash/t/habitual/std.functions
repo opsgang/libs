@@ -42,8 +42,11 @@ _run_safe_chars() {
 ### source_files()
 t_source_files() {
     SUITE="${FUNCNAME[0]#t_}()"
-    run_t t_will_error_if_file_can_not_be_sourced
     run_t t_can_source_multiple_files
+    run_t t_fail_if_file_bad_syntax
+    run_t t_fail_if_file_does_not_exist
+    run_t t_succeed_if_missing_file_with_ignore
+    run_t t_fail_if_file_exists_with_ignore
 }
 
 ### check_var_defined
@@ -284,7 +287,7 @@ t_empty_var_is_error() {
 
 t_can_source_multiple_files() {
     local rc=0 out=""
-    local f="/var/tmp/t_will_error_if_file_can_not_be_sourced"
+    local f="/var/tmp/${FUNCNAME[0]}"
     echo "echo 'foo'">$f.1
     echo "echo 'bar'">$f.2
     out=$(source_files $f.1 $f.2 2>&1)
@@ -293,15 +296,48 @@ t_can_source_multiple_files() {
     return $rc
 }
 
-t_will_error_if_file_can_not_be_sourced() {
+t_fail_if_file_bad_syntax() {
     local rc=0 out=""
-    local f="/var/tmp/t_will_error_if_file_can_not_be_sourced"
+    local f="/var/tmp/${FUNCNAME[0]}"
+    echo "echo 'foo'">$f.1
+    echo 'flumpty \'>$f.2 # flumpty is a bad command. Trust me.
+    echo "echo 'bar'">$f.3
+    ! source_files $f.1 $f.2 $f.3 >/dev/null 2>&1 || rc=1
+    rm $f.1 $f.2 $f.3
+    return $rc
+}
+
+t_fail_if_file_does_not_exist() {
+    local rc=0 out=""
+    local f="/var/tmp/${FUNCNAME[0]}"
     echo "echo 'foo'">$f.1
     echo "echo 'bar'">$f.2
     out=$(source_files $f.1 $f.2 $f.3 2>&1)
-    echo "$out" | grep -P "... can not source $f.3" >/dev/null || rc=1
+    echo "$out" | grep -P "... $f.3 does not exist" >/dev/null || rc=1
     [[ $out =~ ^foo.bar[^-_a-zA-Z0-9] ]] || rc=1
     rm $f.1 $f.2
+    return $rc
+}
+
+t_succeed_if_missing_file_with_ignore() {
+    local rc=0 out=""
+    local f="/var/tmp/${FUNCNAME[0]}"
+    echo "echo 'foo'">$f.1
+    echo "echo 'bar'">$f.3
+    out=$(IGNORE_MISSING=true source_files $f.1 $f.2 $f.3 2>&1) || rc=1
+    [[ $(echo -e "foo\nbar") == "$out" ]] || rc=1
+    rm $f.1 $f.3
+    return $rc
+}
+
+t_fail_if_file_bad_syntax_with_ignore() {
+    local rc=0 out=""
+    local f="/var/tmp/${FUNCNAME[0]}"
+    echo "echo 'foo'">$f.1
+    echo 'flumpty \'>$f.2 # flumpty is a bad command. Trust me.
+    echo "echo 'bar'">$f.3
+    ! IGNORE_MISSING=true source_files $f.1 $f.2 $f.3 >/dev/null 2>&1 || rc=1
+    rm $f.1 $f.2 $f.3
     return $rc
 }
 
