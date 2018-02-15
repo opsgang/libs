@@ -6,7 +6,7 @@ language: none
 
 env:
   global:
-  - secure: YxKOQe/MRxJZQbLR5uEbgIKcRwBG7mlqOTP0cdPoOolFt1uJyXs3U5A5W6ufqUtPWPqclJWybmsvMh0iLfWz7QeynVWjIMPDTgKTHjyxFeoTKuYMnrrJDfk1GgKtn0yF7ZgAQlHrFZ2ZpAqfqIXxUuHECxZkNZXDfgP2duTGf8SODFpK1Z0yTGF+mVNOmC8repq9yUPdQG6cjOTBbmPGOp7mHFOLcd9NLPnaYub1iQUTlRRUQM4Lf4Ji1e35r65jaekOHVHQ2zJQSiABmgvsiuZ+9JWBtVkx7DntBQXqWpb3jA+s/62MTXbXTMhG8Yhbx1wTPaXwaoAIFtNJO1tHtQ==
+    - secure: VF/oUYBtVqG+UWFhjA9v2zaumXheiGePA9OfuA8lFoDypHMkHXZHkcf5MrKbRh4KQ86ao1V8isG+81Tf04Ug5SXjkyfk9kA8x/PKz94kUWE13OtuslunZATR80DI7S7QuFuUZFYe/J8N/afj6x/rpvOwX7DZmSfv9ussQ4GLbs21NhkEPUQMzteJHRchfTgb9fszXdD/11VvZhYK9PEAfDyPtfbjyC8vKa1lRFS+jsS8kWe2Iqcu/h7a9aiNE7lh/rYa/plI8hhn/XHePpbV3Yqiys1kzRCBhetCCG80oOaKXXZLWMVAj+tlIK7q3C4RG89ha3fOw8STyBkqcT11iw==
 
 build:
 
@@ -24,7 +24,7 @@ build:
         [[ $rc -eq 0 ]]
       )
 
-  on_success: [[ -z "${GITHUB_TOKEN}" ]] && echo "GITHUB_TOKEN not defined" ; ./bash/bundles/release
+  on_success: ./bash/bundles/release
 
 integrations:
   hub:
