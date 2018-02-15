@@ -7,6 +7,10 @@ BASE_DIR="$(pwd)/bash"
 RELEASE_DIR="$(pwd)/release-artefacts"
 TMPL_FILE="$BASE_DIR/bundles/sourcelibs.tmpl"
 
+if [[ -z "$GITHUB_TOKEN" ]]; then
+    echo "GITHUB_TOKEN not available to script $0"
+fi
+
 release() {
     local rd="$RELEASE_DIR"
     local tag="" c="" # git tag, sha1 of tag
