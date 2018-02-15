@@ -5,8 +5,7 @@
 language: none
 
 env:
-  global:
-    - secure: VF/oUYBtVqG+UWFhjA9v2zaumXheiGePA9OfuA8lFoDypHMkHXZHkcf5MrKbRh4KQ86ao1V8isG+81Tf04Ug5SXjkyfk9kA8x/PKz94kUWE13OtuslunZATR80DI7S7QuFuUZFYe/J8N/afj6x/rpvOwX7DZmSfv9ussQ4GLbs21NhkEPUQMzteJHRchfTgb9fszXdD/11VvZhYK9PEAfDyPtfbjyC8vKa1lRFS+jsS8kWe2Iqcu/h7a9aiNE7lh/rYa/plI8hhn/XHePpbV3Yqiys1kzRCBhetCCG80oOaKXXZLWMVAj+tlIK7q3C4RG89ha3fOw8STyBkqcT11iw==
+  secure: VF/oUYBtVqG+UWFhjA9v2zaumXheiGePA9OfuA8lFoDypHMkHXZHkcf5MrKbRh4KQ86ao1V8isG+81Tf04Ug5SXjkyfk9kA8x/PKz94kUWE13OtuslunZATR80DI7S7QuFuUZFYe/J8N/afj6x/rpvOwX7DZmSfv9ussQ4GLbs21NhkEPUQMzteJHRchfTgb9fszXdD/11VvZhYK9PEAfDyPtfbjyC8vKa1lRFS+jsS8kWe2Iqcu/h7a9aiNE7lh/rYa/plI8hhn/XHePpbV3Yqiys1kzRCBhetCCG80oOaKXXZLWMVAj+tlIK7q3C4RG89ha3fOw8STyBkqcT11iw==
 
 build:
 
@@ -16,15 +15,11 @@ build:
   on_success: if [[ "${GITHUB_TOKEN}x" == "x" ]]; then echo "GITHUB_TOKEN not available" ; fi || echo "FOUND"
 
 integrations:
-  hub:
-    - integrationName: opsgang_dockerhubreg
-      type: dockerRegistryLogin
-
   notifications:
     - integrationName: opsgang_slack_delivery
       type: slack
       recipients: "#delivery"
-      on_success: always
+      on_success: never
       on_failure: never
       on_pull_request: never
 
