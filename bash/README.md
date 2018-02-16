@@ -15,8 +15,8 @@ Tested bundles are available on the [releases page](https://github.com/opsgang/l
 > before using these scripts locally.
 
 * [BUNDLES](#bundles)
-    * [HOWTO: USE ONE](#use-one)
-    * [HOWTO: GET ONE](#get-one)
+    * [HOWTO: USE ONE](#howto-use-one)
+    * [HOWTO: GET ONE](#howto-get-one)
 
 * [TESTS](#tests)
 
