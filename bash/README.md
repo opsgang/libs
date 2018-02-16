@@ -1,6 +1,7 @@
 [1]: https://github.com/opsgang/fetch#tag-constraint-expressions "OG fetch tag constraints"
 [2]: https://github.com/opsgang/fetch/releases "OG fetch releases"
 [3]: bashdoc-to-md.awk.md
+[4]: https://github.com/settings/tokens
 # libs/bash
 
 _Make your life easier and consistent when scripting automation, by sourcing these libs._
@@ -48,19 +49,28 @@ e.g. If you've installed the bundle under /my/dir ...
 
 ### HOWTO: GET ONE
 
+> As all of the methods below involve downloading via github you should always use
+> a [github access token][4], or else your requests will be rate-limited.
+
 #### ... I want an exact version or the latest
 
+> You can download and untgz a version (or latest) in one line if you want.
+
+e.g. to download _latest_ release of `terraform_run.tgz` bundle to `/my/dir`:
+
 ```bash
-# ... download and untgz latest terraform_run in /my/dir
 mkdir -p /my/dir
-curl   -L -H 'Accept: application/octet-stream' \
+curl -L -H 'Accept: application/octet-stream' \
     https://github.com/opsgang/libs/releases/download/latest/terraform_run.tgz \
     | tar -xvz -C /my/dir
 
-# ... or replace /latest in url with desired tag e.g. /0.0.1
 ```
 
-#### ... I want to specify a version constraint like '~1.0'
+... or replace /latest in url with desired tag e.g. /0.0.1
+
+#### ... I want to specify a version constraint like '~>1.0'
+
+> You can use the repo's download helper to get the version of a bundle that meets your criteria.
 
 ```bash
 curl --retry 3 -L \
