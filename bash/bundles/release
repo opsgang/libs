@@ -71,6 +71,8 @@ body_text() {
     local tag="$1" commit="$2"
     local bt='```' # don't want to deal with backticks being interpolated
     echo "
+[1]: https://github.com/opsgang/libs/tree/$tag/bash/README.md#howto-get-one
+[2]: https://github.com/opsgang/libs/tree/$tag/bash/README.md#howto-use-one
 ## $tag
 
 _Built from sha1 ${commit}_.
@@ -81,13 +83,10 @@ _Built from sha1 ${commit}_.
 
 * terraform_run.tgz: all bash libs to run terraform consistently regardless of version.
 
-> Download one of these, untgz and source the opsgang.sourcelibs file in your bash code.
->
-> e.g in your own bash code add the line:
+For how to get one of these bundles, see [here][1] - or just `curl` and untar it from here.
 
-${bt}bash
-. /path/to/opsgang.sourcelibs || exit 1
-${bt}
+For how to use a bundle, see [here][2].
+
 "
 }
 
