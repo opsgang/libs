@@ -36,6 +36,8 @@ non-interactive way.
 The bundles all contain an entrypoint script that does all of the sourcing of the
 other libs for you.
 
+---
+
 ### HOWTO: USE ONE
 
 Just source the entrypoint script which is always called `opsgang.sourcelibs`.
@@ -47,10 +49,22 @@ e.g. If you've installed the bundle under /my/dir ...
 . /my/dir/opsgang.sourcelibs || exit 1
 ```
 
+---
+
 ### HOWTO: GET ONE
 
-> As all of the methods below involve downloading via github you should always use
-> a [github access token][4], or else your requests will be rate-limited.
+#### a quick aside - the github access token
+
+> Github will rate-limit your downloads a lot more if you don't send
+> an authorization token with the request.
+>
+> Just create a github [personal access token][4] for the user that will
+> perform the downloads, and add this to the curl commands in the examples.
+
+e.g.
+
+* add to the curl `-H 'Authorization: token {{mytoken}}'`, where {{mytoken}}
+    is replaced with your shiny github token.
 
 #### ... I want an exact version or the latest
 
@@ -59,37 +73,38 @@ e.g. If you've installed the bundle under /my/dir ...
 e.g. to download _latest_ release of `terraform_run.tgz` bundle to `/my/dir`:
 
 ```bash
-mkdir -p /my/dir
-curl -L -H 'Accept: application/octet-stream' \
+curl -sSL -H 'Accept: application/octet-stream' \
     https://github.com/opsgang/libs/releases/download/latest/terraform_run.tgz \
     | tar -xvz -C /my/dir
-
 ```
 
 ... or replace /latest in url with desired tag e.g. /0.0.1
 
 #### ... I want to specify a version constraint like '~>1.0'
 
-> You can use the repo's download helper to get the version of a bundle that meets your criteria.
+> You can use the repo's download helper to install the version of a bundle that
+> meets your criteria.
+
+e.g to download and untgz the latest 1.x version of terraform\_run.gz to `/my/dir/`:
 
 ```bash
-curl --retry 3 -L \
+curl --retry 3 -sSL
     https://raw.githubusercontent.com/opsgang/libs/master/bash/bundles/dl_release.sh \
-| GITHUB_OAUTH_TOKEN=<github access token> bash -s -- <bundle> <ver constraint> <dl dir>
-
-# e.g to download and untgz terraform_run.gz, the latest 1.x version to /my/dir/:
-curl --retry 3 -L \
-    https://raw.githubusercontent.com/opsgang/libs/master/bash/bundles/dl_release.sh \
-| GITHUB_OAUTH_TOKEN=$token bash -s -- terraform_run.gz '~1.0' /my/dir
+| GITHUB_TOKEN=$token bash -s -- terraform_run.gz '~1.0' /my/dir
 ```
 
-> GITHUB\_OAUTH\_TOKEN can be omitted, but your downloads will be rate-limited.
+> GITHUB\_TOKEN can be omitted, but your downloads will be rate-limited.
+> See 
 >
 > The local download dir will be created if needed.
 >
 > See the [opsgang/fetch README][1] for a description of version constraints.
 >
-> If you already have [opsgang/fetch][2] in your \$PATH, dl\_release.sh will be quicker.
+> If you already have [opsgang/fetch][2] in your \$PATH, dl\_release.sh will run quicker.
+
+---
+
+---
 
 ## TESTS
 
@@ -131,6 +146,10 @@ t ./ || echo "FAILURES"       # run tests for all functions.
 t habitual || echo "FAILURES" # run tests for all functions under habitual
 
 ```
+
+---
+
+---
 
 ## DOCS
 
