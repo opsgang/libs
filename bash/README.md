@@ -1,5 +1,5 @@
-[1]: https://github.com/opsgang/fetch#tag-constraint-expressions \"OG fetch tag constraints\"
-[2]: https://github.com/opsgang/fetch/releases \"OG fetch releases\"
+[1]: https://github.com/opsgang/fetch#tag-constraint-expressions "OG fetch tag constraints"
+[2]: https://github.com/opsgang/fetch/releases "OG fetch releases"
 [3]: bash/bashdoc-to-md.awk.md
 # libs/bash
 
