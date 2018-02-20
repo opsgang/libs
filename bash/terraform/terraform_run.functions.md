@@ -184,7 +184,9 @@ Arg 1: (optional) path to dir containing your terraform. Defaults to current dir
 
 Will use `remote cfg` and `get` instead of `init` for older terraform versions.
 
-Will run `apply -auto-approve` for newer versions of terraform.
+Will always run with `-input=false`. These scripts are for automation after all!
+
+Will also append `-auto-approve` for terraform v0.11+.
 
 See [terraform_init](#terraform_init) and [terraform_apply](#terraform_apply).
 

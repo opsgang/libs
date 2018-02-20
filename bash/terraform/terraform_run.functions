@@ -244,7 +244,7 @@ terraform_init() {
 #
 terraform_apply() {
     i "... applying terraform"
-    local opts="$TERRAFORM_APPLY_OPTS" # opts to pass apply subcmd
+    local opts="$TERRAFORM_APPLY_OPTS -input=false" # opts to pass apply subcmd
 
     # ... for terraform 0.11.0 or later
     semver_a_ge_b "$(terraform_version)" "0.11.0" && opts="$opts -auto-approve"
@@ -268,7 +268,9 @@ terraform_apply() {
 #
 # Will use `remote cfg` and `get` instead of `init` for older terraform versions.
 #
-# Will run `apply -auto-approve` for newer versions of terraform.
+# Will always run with `-input=false`. These scripts are for automation after all!
+#
+# Will also append `-auto-approve` for terraform v0.11+.
 #
 # See [terraform_init](#terraform_init) and [terraform_apply](#terraform_apply).
 #
@@ -363,7 +365,7 @@ terraform_run() {
 
         __show_env # if DEVMODE, will print out exported vars.
 
-        $TERRAFORM plan || exit 1
+        $TERRAFORM plan -input=false || exit 1
 
         no_unpushed_changes || exit 1
 

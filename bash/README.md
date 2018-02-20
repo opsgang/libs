@@ -90,7 +90,7 @@ e.g to download and untgz the latest 1.x version of terraform\_run.gz to `/my/di
 ```bash
 curl --retry 3 -sSL
     https://raw.githubusercontent.com/opsgang/libs/master/bash/bundles/dl_release.sh \
-| GITHUB_TOKEN=$token bash -s -- terraform_run.gz '~1.0' /my/dir
+| GITHUB_TOKEN=$token bash -s -- terraform_run.gz '~>1.0' /my/dir
 ```
 
 > GITHUB\_TOKEN can be omitted, but your downloads will be rate-limited.
