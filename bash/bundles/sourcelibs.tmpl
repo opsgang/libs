@@ -2,7 +2,7 @@
 #
 # Source this file in your script and all necessary libs
 # will also be consumed.
-# 
+#
 __OPSGANG_LIBS="
 "
 if [[ -z "$BASH_SOURCE" ]] || [[ "$BASH_SOURCE" == "$0" ]]; then
@@ -10,8 +10,21 @@ if [[ -z "$BASH_SOURCE" ]] || [[ "$BASH_SOURCE" == "$0" ]]; then
     exit 1
 fi
 RC=0
+
+OPSGANG_add_source() {
+    export OPSGANG_SOURCED="$OPSGANG_SOURCED $*"
+}
+
+OPSGANG_is_sourced() {
+    OPSGANG_list_sourced | grep -P "^$1$" >/dev/null
+}
+
+OPSGANG_list_sourced() {
+    printf "%s\n" $OPSGANG_SOURCED
+}
+
 __source() {
-    local file="" file_abs="" rc=0 
+    local file="" file_abs="" rc=0
     local this="$BASH_SOURCE"
     local libdir="$(cd "$(dirname "$this")"; pwd)"
 
@@ -19,7 +32,12 @@ __source() {
     for file in $libs; do
         file_abs=$libdir/$file
         [[ ! -z $DEBUG ]] && echo "DEBUG $this: ... sourcing $file_abs" >&2
-        ! . $file_abs && echo "ERROR $this: could not source $file_abs" >&2 && rc=1
+        if . $file_abs
+        then
+            OPSGANG_add_source "$file_abs"
+        else
+            echo "ERROR $this: could not source $file_abs" >&2 && rc=1
+        fi
     done
     return $rc
 }
