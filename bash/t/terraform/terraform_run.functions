@@ -48,7 +48,7 @@ setup_terraform_run_stubs() {
 
     stub_no_unpushed_changes="$(echo -e "no_unpushed_changes() {\nreturn $nrc\n}")"
     eval "$stub_no_unpushed_changes"
-    
+
     for hook in $__HOOKS; do
         f="$(echo -e "$hook() {\necho TEST RAN $hook\n}")"
         eval "$f"
@@ -72,8 +72,8 @@ t_tf() {
     run_t t_use_which_if_tf_var_not_set
 }
 
-### export_governance_vars
-t_export_governance_vars() {
+### tf_export_governance_vars
+tf_t_export_governance_vars() {
     SUITE="${FUNCNAME[0]#t_}()"
     run_t t_fails_if_not_a_git_repo
     run_t t_fails_if_custom_governance_vars_does
@@ -120,7 +120,7 @@ t_fails_if_not_a_git_repo() {
     rm -rf $d 2>/dev/null ; mkdir -p $d
     (
         cd $d
-        o=$(export_governance_vars 2>&1)
+        o=$(tf_export_governance_vars 2>&1)
         [[ $? -ne 0 ]] && echo "$o" | grep 'is not inside a git repo' >/dev/null
     ) || rc=1
     rm -rf $d 2>/dev/null ; return $rc
@@ -135,7 +135,7 @@ t_fails_if_custom_governance_vars_does() {
         custom_governance_vars() {
             return 1
         }
-        o=$(export_governance_vars 2>&1)
+        o=$(tf_export_governance_vars 2>&1)
         [[ $? -ne 0 ]] && echo "$o" | grep '... failed' >/dev/null
     ) || rc=1
     rm -rf $d 2>/dev/null ; return $rc
@@ -152,7 +152,7 @@ t_succeeds_if_custom_governance_vars_does() {
             return 0
         }
 
-        export_governance_vars && [[ "$TF_VAR_foo" == "true" ]]
+        tf_export_governance_vars && [[ "$TF_VAR_foo" == "true" ]]
     ) || rc=1
     rm -rf $d 2>/dev/null ; return $rc
 }
