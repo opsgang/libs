@@ -50,6 +50,7 @@
 # FUNCTIONS
 
 * [tf\_export\_governance\_vars()](#tf_export_governance_vars)
+* [export\_governance\_vars()](#export_governance_vars)
 * [tf()](#tf)
 * [terraform\_version()](#terraform_version)
 * [terraform\_cleanup()](#terraform_cleanup)
@@ -115,6 +116,12 @@ that exports vars of your own devising.
 
 ```
 
+
+---
+
+### export\_governance\_vars()
+
+DEPRECATED use tf_export_governance_vars instead
 
 ---
 
