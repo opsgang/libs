@@ -310,7 +310,7 @@ t_cleanup_keep_plugins() {
 t_tf_path_not_set_or_found() {
     (
         TERRAFORM="" ;
-        which() { # will override which, used in tf() if $TERRAFORM not set
+        command() { # will override command, used in tf() if $TERRAFORM not set
             return 1
         }
 
@@ -331,7 +331,7 @@ t_prefer_tf_env_var() {
 t_use_which_if_tf_var_not_set () {
     (
         TERRAFORM="" ;
-        which() {
+        command() {
             echo "/use/this/path"
         }
         a=$(tf) ; [[ $? -eq 0 ]] && echo $a | grep '^/use/this/path$' >/dev/null
