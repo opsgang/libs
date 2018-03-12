@@ -118,7 +118,7 @@ tf_export_governance_vars() {
 # Optionally, user can set $TERRAFORM in env, to force the use of a particular binary.
 #
 tf() {
-    [[ -z "$TERRAFORM" ]] && TERRAFORM=$(which terraform 2>/dev/null)
+    TERRAFORM=${TERRAFORM:-$(command -v terraform 2>/dev/null)}
     if [[ -z "$TERRAFORM" ]]; then
         red_e "... can not locate terraform. Set \$TERRAFORM in env if you know the path"
         return 1
