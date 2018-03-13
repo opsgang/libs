@@ -113,12 +113,6 @@ tf_export_governance_vars() {
     __run_if_exists tf_custom_governance_vars || return 1
 }
 
-# @desc DEPRECATED use tf_export_governance_vars instead
-export_governance_vars() {
-    yellow_i "DEPRECATION: use tf_export_governance_vars instead"
-    tf_export_governance_vars
-}
-
 # @desc Returns the path to the terraform binary.
 #
 # Optionally, user can set $TERRAFORM in env, to force the use of a particular binary.
