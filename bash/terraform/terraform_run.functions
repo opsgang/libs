@@ -3,7 +3,7 @@
 # @overview
 # >
 # > Functions to make running terraform consistent regardless of version used.
-# > 
+# >
 # > The wrapper function [terraform_run](#terraform_run) honours user-defined handlers to
 # > change or add behaviour between invoking terraform subcommands.
 # >
@@ -70,12 +70,12 @@ __show_env() {
 #
 # e.g. AWS tags, or in a comment in # a config file
 #
-# Additionally you can also export your own by defining a custom_governance_vars function
+# Additionally you can also export your own by defining a tf_custom_governance_vars function
 # that exports vars of your own devising.
 #
 # > The function will fail if your current working dir is not a git repo!
-# > 
-# > If you really don't want the git stuff, you can define your own export_governance_vars()
+# >
+# > If you really don't want the git stuff, you can define your own tf_export_governance_vars()
 # > function in your script AFTER sourcing functions.terraform.
 #
 # @example
@@ -95,22 +95,22 @@ __show_env() {
 #      }
 #
 #      # ... setting your own additional vars:
-#      #     - define custom_governance_vars() func.
-#      #     - call export_governance_vars.
-#      custom_governance_vars() {
+#      #     - define tf_custom_governance_vars() func.
+#      #     - call tf_export_governance_vars.
+#      tf_custom_governance_vars() {
 #          TF_VAR_aws_user=$(aws iam get-user --query 'User.UserName' --output text) || return 1
 #          export $TF_VAR_aws_user
 #      }
 #
-#      export_governance_vars || exit 1 # now use var.aws_user in your terraform
+#      tf_export_governance_vars || exit 1 # now use var.aws_user in your terraform
 #
-export_governance_vars() {
+tf_export_governance_vars() {
     git_vars || return 1 # will set $GIT_INFO
     export_build_url     # will set $BUILD_URL if possible
     export TF_VAR_git_user="$GIT_USER"
     export TF_VAR_git_info="$GIT_INFO"
     export TF_VAR_build_url="$BUILD_URL"
-    __run_if_exists custom_governance_vars || return 1
+    __run_if_exists tf_custom_governance_vars || return 1
 }
 
 # @desc Returns the path to the terraform binary.
@@ -118,7 +118,7 @@ export_governance_vars() {
 # Optionally, user can set $TERRAFORM in env, to force the use of a particular binary.
 #
 tf() {
-    [[ -z "$TERRAFORM" ]] && TERRAFORM=$(which terraform 2>/dev/null)
+    TERRAFORM=${TERRAFORM:-$(command -v terraform 2>/dev/null)}
     if [[ -z "$TERRAFORM" ]]; then
         red_e "... can not locate terraform. Set \$TERRAFORM in env if you know the path"
         return 1
@@ -194,9 +194,9 @@ terraform_cleanup() {
 }
 
 # @desc Will run terraform subcommands to initialise / fetch remote state, any modules and plugins.
-# 
+#
 # Some [globals](#globals) - $TERRAFORM, $TERRAFORM_INIT_OPTS, TERRAFORM_GET_OPTS - affect behaviour.
-# 
+#
 terraform_init() {
     local init_opts="$TERRAFORM_INIT_OPTS" # init / remote config opts
     local get_opts="$TERRAFORM_GET_OPTS"
@@ -295,7 +295,7 @@ terraform_apply() {
 # > make them no-op if in $DEVMODE , as `terraform apply` will not run.
 # > See terraform_postapply example below.
 # >
-# > For custom governance vars see [export_governance_vars](#export_governance_vars).
+# > For custom governance vars see [tf_export_governance_vars](#tf_export_governance_vars).
 #
 # * `terraform_preinit`:
 #    after [terraform\_cleanup](#terraform_cleanup) but before [terraform\_init](#terraform_init).
@@ -321,10 +321,10 @@ terraform_apply() {
 #       terraform_preinit() {
 #           export TF_VAR_host_size="humungous"
 #           export TF_VAR_secret="$(get_secret)"
-#       
+#
 #           required_vars "TF_VAR_host_size TF_VAR_secret" || return 1
 #       }
-#       
+#
 #       terraform_run "/my/tf/dir" || exit 1 # will use $TF_VAR* on `plan` and `apply`
 #
 #
@@ -336,7 +336,7 @@ terraform_apply() {
 #       }
 #
 #       terraform_run "/my/tf/dir" || exit 1 # unless DEVMODE, will apply terraform and switch dns.
-#       
+#
 terraform_run() {
     local wd="$1" tf=""
 
@@ -355,7 +355,7 @@ terraform_run() {
 
         __run_if_exists terraform_preinit  || exit 1
 
-        export_governance_vars || exit 1
+        tf_export_governance_vars || exit 1
 
         terraform_init || exit 1
 
@@ -377,4 +377,3 @@ terraform_run() {
 
     return 0
 }
-

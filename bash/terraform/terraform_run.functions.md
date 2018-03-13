@@ -2,7 +2,7 @@
 
 >
 > Functions to make running terraform consistent regardless of version used.
-> 
+>
 > The wrapper function [terraform_run](#terraform_run) honours user-defined handlers to
 > change or add behaviour between invoking terraform subcommands.
 >
@@ -49,7 +49,7 @@
 
 # FUNCTIONS
 
-* [export\_governance\_vars()](#export_governance_vars)
+* [tf\_export\_governance\_vars()](#tf_export_governance_vars)
 * [tf()](#tf)
 * [terraform\_version()](#terraform_version)
 * [terraform\_cleanup()](#terraform_cleanup)
@@ -59,7 +59,7 @@
 
 ---
 
-### export\_governance\_vars()
+### tf\_export\_governance\_vars()
 
 Exports some default TF_VAR_ env vars.
 
@@ -77,12 +77,12 @@ that support it.
 
 e.g. AWS tags, or in a comment in # a config file
 
-Additionally you can also export your own by defining a custom_governance_vars function
+Additionally you can also export your own by defining a tf_custom_governance_vars function
 that exports vars of your own devising.
 
 > The function will fail if your current working dir is not a git repo!
-> 
-> If you really don't want the git stuff, you can define your own export_governance_vars()
+>
+> If you really don't want the git stuff, you can define your own tf_export_governance_vars()
 > function in your script AFTER sourcing functions.terraform.
 
 #### Example
@@ -104,14 +104,14 @@ that exports vars of your own devising.
    }
 
    # ... setting your own additional vars:
-   #     - define custom_governance_vars() func.
-   #     - call export_governance_vars.
-   custom_governance_vars() {
+   #     - define tf_custom_governance_vars() func.
+   #     - call tf_export_governance_vars.
+   tf_custom_governance_vars() {
        TF_VAR_aws_user=$(aws iam get-user --query 'User.UserName' --output text) || return 1
        export $TF_VAR_aws_user
    }
 
-   export_governance_vars || exit 1 # now use var.aws_user in your terraform
+   tf_export_governance_vars || exit 1 # now use var.aws_user in your terraform
 
 ```
 
@@ -211,7 +211,7 @@ changes, and also to ensure that the git audit info is accurate.
 > make them no-op if in $DEVMODE , as `terraform apply` will not run.
 > See terraform_postapply example below.
 >
-> For custom governance vars see [export_governance_vars](#export_governance_vars).
+> For custom governance vars see [tf_export_governance_vars](#tf_export_governance_vars).
 
 * `terraform_preinit`:
    after [terraform\_cleanup](#terraform_cleanup) but before [terraform\_init](#terraform_init).
@@ -239,10 +239,10 @@ changes, and also to ensure that the git audit info is accurate.
     terraform_preinit() {
         export TF_VAR_host_size="humungous"
         export TF_VAR_secret="$(get_secret)"
-    
+
         required_vars "TF_VAR_host_size TF_VAR_secret" || return 1
     }
-    
+
     terraform_run "/my/tf/dir" || exit 1 # will use $TF_VAR* on `plan` and `apply`
 
 
@@ -254,7 +254,7 @@ changes, and also to ensure that the git audit info is accurate.
     }
 
     terraform_run "/my/tf/dir" || exit 1 # unless DEVMODE, will apply terraform and switch dns.
-    
+
 ```
 
 
