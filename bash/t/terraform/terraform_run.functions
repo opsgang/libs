@@ -132,7 +132,7 @@ t_fails_if_custom_governance_vars_does() {
     rm -rf $d 2>/dev/null ; mkdir -p $d
     (
         cd $d
-        custom_governance_vars() {
+        tf_custom_governance_vars() {
             return 1
         }
         o=$(tf_export_governance_vars 2>&1)
@@ -147,7 +147,7 @@ t_succeeds_if_custom_governance_vars_does() {
     rm -rf $d 2>/dev/null ; mkdir -p $d
     (
         cd $d
-        custom_governance_vars() {
+        tf_custom_governance_vars() {
             export TF_VAR_foo="true"
             return 0
         }
