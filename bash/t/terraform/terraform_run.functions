@@ -73,7 +73,7 @@ t_tf() {
 }
 
 ### tf_export_governance_vars
-tf_t_export_governance_vars() {
+t_tf_export_governance_vars() {
     SUITE="${FUNCNAME[0]#t_}()"
     run_t t_fails_if_not_a_git_repo
     run_t t_fails_if_custom_governance_vars_does
