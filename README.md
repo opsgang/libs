@@ -11,6 +11,8 @@ Mac users: We use `realpath`, and GNU versions of `sed`, `awk`, `sort`.
 
 BSD flavours will not work, so `homebrew` some GNU-ey goodness if you plan to use these scripts locally.
 
+**PS:** If you want to contribute, master branch of this repo requires signed commits.
+
 ## USAGE
 
 Typically we source all scripts under bash/habitual/ in our scripts
@@ -87,4 +89,3 @@ t ./ || echo "FAILURES"       # run tests for all functions.
 t habitual || echo "FAILURES" # run tests for all functions under habitual
 
 ```
-
