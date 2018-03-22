@@ -1,0 +1,35 @@
+#!/bin/bash
+# vim: et sr sw=4 ts=4 smartindent syntax=sh:
+# TESTS terraform dev
+#
+
+### tf_init_module
+t_tf_init_module() {
+    SUITE="${FUNCNAME[0]#t_}()"
+    run_t t_initialise_empty_module
+}
+
+t_initialise_non_exist_empty_module() {
+  local module_name='terraform-aws-test-module'
+  local template_path="$(realpath $(dirname $BASH_SOURCE))/../../terraform/templates/dev/module"
+
+  (
+    set -o pipefail
+    pushd /tmp
+      rm -rf $module_name
+      tf_init_module $module_name
+      num_copied_files=$(find $module_name -type f | wc -l)
+      num_template_files=$(find $template_path -type f | wc -l)
+      rm -rf $module_name
+    popd
+    [[ $? != 0 ]] && exit 1
+    [[ $num_copied_files -ne $num_template_files ]] && exit 1
+  ) || return 1
+
+  return 0
+}
+
+! . t/t.functions && echo "ERROR $0: could not source t.functions" && exit 1
+source_src_and_deps "habitual/std.functions habitual/git.functions" || exit 1
+
+run $*

@@ -1,0 +1,28 @@
+# vim: et sr sw=4 ts=4 smartindent syntax=sh:
+#
+# @overview
+# >
+# > Functions you might need while you're developing terraform code
+# >
+# > Source habitual/{std,git}.functions before calling functions in here.
+# >
+
+# @desc Initiates an empty Terraform module
+#
+# @example
+# tf_init_module iam_users
+#
+
+tf_init_module() {
+  local module=${1%/} # remove trailing slash
+  local template_path="$(realpath $(dirname $BASH_SOURCE))/templates/dev/module"
+
+  if [ -z $module ] || [ -d $module ]; then
+    e "Empty module name or the directory ${module} is exist"
+    return 1
+  fi
+
+    mkdir $module && cp -Rv $template_path $module || return 1
+
+  i "Module ${module} initialised"
+}
