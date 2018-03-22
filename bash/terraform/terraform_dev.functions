@@ -14,15 +14,21 @@
 #
 
 tf_init_module() {
-  local module=${1%/} # remove trailing slash
-  local template_path="$(realpath $(dirname $BASH_SOURCE))/templates/dev/module"
+    local m="${1%/}" # module
+    local tp="$(realpath -- $(dirname $BASH_SOURCE))/templates/dev/module"
+    if [ -z $m ] || [ -d $m ]; then
+        e "Empty module name or the directory ${m} already exists."
+        return 1
+    fi
 
-  if [ -z $module ] || [ -d $module ]; then
-    e "Empty module name or the directory ${module} is exist"
-    return 1
-  fi
+    d "Generating module skel from $tp -> $(pwd)/$m"
+    if mkdir $m && cp -av $template_path/. $m >/dev/null
+    then
+        i "Module $m initialised"
+        return 0
+    else
+        red_e "Failed to initialise module $m"
+        return 1
+    fi
 
-    mkdir $module && cp -Rv $template_path $module || return 1
-
-  i "Module ${module} initialised"
 }
