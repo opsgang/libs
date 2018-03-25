@@ -10,7 +10,7 @@ _EMAIL="boo@boo.com"
 HEAD_SHA="set-in-setup()"
 SECOND_SHA="set-in-setup()"
 
-setup() {
+pre_run() {
     i "... setting up for tests"
     if [[ -z "$TESTS_DEVMODE" ]]; then
         rm -rf $L_REPO $L_NONREPO 2>/dev/null
@@ -393,7 +393,7 @@ t_error_checking_if_not_a_git_dir() {
 
 ! . t/t.functions && echo "ERROR $0: could not source t.functions" && exit 1
 source_src_and_deps "habitual/std.functions" || exit 1
-setup || exit 1
+pre_run || exit 1
 
 run $*
 

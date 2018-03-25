@@ -1,7 +1,46 @@
 # vim: et sr sw=4 ts=4 smartindent syntax=sh:
+#
+# t/t.functions
+#
+
+# $FAILURES:
+# ... used to capture failed test names.
 FAILURES=""
-SRC="${0##\./}"
-SRC="${SRC##t/}"
+
+# $SRC:
+# ... relative path to actual lib file to test
+#     determined by set_SRC(), called when you source
+#     t/t.functions.
+SRC=
+
+# tests must be run from within the ./bash dir and the test script
+# name should be set using a relative path
+set_SRC() {
+    if ! command -v realpath >/dev/null 2>&1
+    then
+        echo "ERROR: you must install GNU tools like realpath" >&2
+        echo "ERROR: before using opsgang/libs." >&2
+        exit 1
+    fi
+
+    if [[ ! $(pwd) =~ /bash$ ]]; then
+        echo "ERROR: you must call test script from inside the bash dir" >&2
+        exit 1
+    fi
+
+    SRC="$(realpath -- $0 | sed -e 's!.\+/bash/t/!!')"
+    SRC="$SRC"
+    if [[ $? -ne 0 ]]; then
+        echo "ERROR: problems determining real path to $0" >&2
+        exit 1
+    fi
+
+    if [[ ! -r $SRC ]]; then
+        echo "ERROR: can not find the lib $SRC for test script $0" >&2
+        exit 1
+    fi
+
+}
 
 run_t() {
     local func="${1#t_}"
@@ -66,3 +105,5 @@ results() {
         return 1
     fi
 }
+
+set_SRC || return 1
