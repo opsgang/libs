@@ -45,15 +45,15 @@ for lib in $libs; do awk -f bashdoc-to-md.awk $lib > $lib.md ; done
 
 ## BUILDS / PKGS
 
-Currently these run tests against the bash functions.
+Shippable will react to the push of a git tag event by building, testing and
+on success creating a release for that tag.
 
-TODO:
+Additionally, .tgz bundles are created as release attachments. Each bundle
+contains the assets needed to easily automate particular tasks
+in a consistent and predictable manner e.g for running terraform, or
+another bundle for building an AMI.
 
-On a git tag push event, create bundles of related scripts and upload
-as binary assets to a github release. e.g. all utility scripts for running terraform,
-or building an AMI _opsgang_ style.
-
-These could then be retrieved with [opsgang/fetch][1].
+Bundles can be retrieved easily using [opsgang/fetch][1].
 
 ## TESTS
 
