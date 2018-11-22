@@ -133,9 +133,9 @@ tf() {
 # Affected by [global](#globals) $TERRAFORM.
 #
 terraform_version() {
-    local tv=""
+    [[ -z "$TERRAFORM" ]] && TERRAFORM=$(tf)
     $TERRAFORM --version | grep -Po '(?<=Terraform v)[\d\.]+'
-    if [[ $? -ne 0 ]] || [[ -z "$tv" ]]; then
+    if [[ $? -ne 0 ]] ; then
         red_e "... could not determine version: used $TERRAFORM --version"
         return 1
     fi
@@ -342,8 +342,10 @@ terraform_run() {
 
     __special_modes
 
-    tf=$(tf) || return 1
+    TERRAFORM=$(tf) || return 1
     i "... using $tf"
+
+    export TERRAFORM
 
     (
         if [[ "$wd" ]]; then

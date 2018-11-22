@@ -72,6 +72,39 @@ t_tf() {
     run_t t_use_which_if_tf_var_not_set
 }
 
+### terraform_version
+t_terraform_version() {
+    SUITE="${FUNCNAME[0]#t_}()"
+    run_t t_TERRAFORM_not_defined
+    run_t t_malformed_version
+}
+
+# ... should fail unless matched version pattern
+t_malformed_version() {
+    (
+        TERRAFORM=malformed_version
+        malformed_version() {
+            echo "Terrafecked v0.11.10"
+        }
+        a=$(terraform_version 2>/dev/null) ; [[ $? -ne 0 ]] && [[ -z "$a" ]]
+    )
+}
+
+# ... should use `tf()` to find binary
+# and run it --version to get a value.
+t_TERRAFORM_not_defined() {
+    (
+        unset TERRAFORM
+        tf() {
+            echo "fake_version"
+        }
+        fake_version() {
+            echo "Terraform v0.11.10"
+        }
+        a=$(terraform_version) ; [[ $? -eq 0 ]] && [[ "$a" =~ ^0.11.10$ ]]
+    )
+}
+
 ### tf_export_governance_vars
 t_tf_export_governance_vars() {
     SUITE="${FUNCNAME[0]#t_}()"
@@ -321,7 +354,7 @@ t_tf_path_not_set_or_found() {
 t_prefer_tf_env_var() {
     (
         TERRAFORM=/use/this/path
-        which() {
+        command() {
             echo "/don't/use/this/path"
         }
         a=$(tf) ; [[ $? -eq 0 ]] && echo $a | grep '^/use/this/path$' >/dev/null
