@@ -1,4 +1,6 @@
-# USING RELEASE BUNDLE
+# terraform\_run functions cookbook
+
+## USE THE RELEASE BUNDLE
 
 ```bash
 # ... fetch and unpack release bundle
