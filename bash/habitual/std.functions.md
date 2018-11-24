@@ -35,6 +35,10 @@
 * [envsubst\_tokens\_list()](#envsubst_tokens_list)
 * [random\_str()](#random_str)
 * [semver\_a\_ge\_b()](#semver_a_ge_b)
+* [multiline\_to\_single()](#multiline_to_single)
+* [single\_to\_multiline()](#single_to_multiline)
+* [base64\_encode()](#base64_encode)
+* [base64\_decode()](#base64_decode)
 * [export\_build\_url()](#export_build_url)
 ## LOG MESSAGE FUNCTIONS
 ---
@@ -220,6 +224,79 @@ semver_a_ge_b v0.99.0 0.99.0   # true (as args are the same, ignoring the leadin
 semver_a_ge_b 0.99.0-beta V0.99.0-alpha # true (as beta beats alpha)
 
 ```
+
+
+---
+
+### multiline\_to\_single()
+
+Concatenates a multiline string, converting newlines to \n
+
+STDOUT: concatenated line
+*NOTE: the argument is double quoted if a variable, to preserve real newlines.*
+
+#### Example
+
+```bash
+my_str="This is
+a multiline string"
+multiline_to_single "$my_str"
+
+# ... would print something like:
+# This is\na multiline string
+
+```
+
+
+---
+
+### single\_to\_multiline()
+
+Splits a string on '\n' to multiple lines with real newlines.
+
+STDOUT: Multiple lines
+
+These are an alternative to the `base64_encode` and
+`base64_decode` functions, for example, when base64 produces
+too long a string. Try storing an ssh key in AWS parameter store
+and see what I mean ...
+
+#### Example
+
+```bash
+my_str="This will be\na multiline string"
+single_to_multiline "$my_str"
+
+# ... would print something like:
+# This will be
+# a multiline string
+
+```
+
+
+---
+
+### base64\_encode()
+
+Encodes a string (or mulitline string) as Base64
+
+You can use this and `base64_decode` when you need to pass
+or store multiline strings as a single line.
+
+These are an alternative to the `single_to_multiline` and
+`multiline_to_single` functions when you wish to preserve existing
+'\n' instances in your strings, and not convert them to newlines
+or vice-versa.
+
+
+---
+
+### base64\_decode()
+
+Decodes a base64 string
+
+You can use this and `base64_decode` when you need to pass
+or store multiline strings as a single line.
 
 
 ---
