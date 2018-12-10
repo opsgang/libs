@@ -62,14 +62,24 @@ required_vars() {
     for this_var in $required_vars; do
         if ! check_var_defined $this_var
         then
-            e "\$$this_var must be set in env"
+            failed="${failed}\$$this_var "
             rc=1
         fi
     done
-
+    [[ $rc -ne 0 ]] && e "following vars must be set in env:\n$failed"
     return $rc
 }
 
+# @desc Checks if a var has an empty value.
+#
+# **Whitespace and _0_ are considered non-empty values.**
+#
+# Returns 1 if undefined / empty.
+#
+# @example
+#   # ... test to see $FOO and $BAR are non-empty.
+#   check_var_defined "FOO" || echo "FOO is empty or not defined"
+#
 check_var_defined() {
     local var_name="$1"
     local var_val="${!var_name}"

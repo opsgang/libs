@@ -30,6 +30,7 @@
 ---
 * [source\_files()](#source_files)
 * [required\_vars()](#required_vars)
+* [check\_var\_defined()](#check_var_defined)
 * [str\_to\_safe\_chars()](#str_to_safe_chars)
 * [safe\_chars\_def\_list()](#safe_chars_def_list)
 * [envsubst\_tokens\_list()](#envsubst_tokens_list)
@@ -89,6 +90,25 @@ Returns 1 if any are undefined or empty.
 ```bash
 # ... test to see $FOO and $BAR are non-empty.
 required_vars "FOO BAR" || exit 1
+
+```
+
+
+---
+
+### check\_var\_defined()
+
+Checks if a var has an empty value.
+
+**Whitespace and _0_ are considered non-empty values.**
+
+Returns 1 if undefined / empty.
+
+#### Example
+
+```bash
+# ... test to see $FOO and $BAR are non-empty.
+check_var_defined "FOO" || echo "FOO is empty or not defined"
 
 ```
 
