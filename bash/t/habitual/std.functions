@@ -426,8 +426,10 @@ t_prefix_when_run_in_sourced_file() {
     local a=""
     (
         # no need to use FROM_STACKFRAME as set_log_prefix called indirectly within a new frame
-        # created by anon file descriptor <()
-        . <(echo -e 'a=$(DEBUG=true set_log_prefix)')
+        # created by file descriptor
+        local f=$(mktemp)
+        echo 'DEBUG=true a=$(set_log_prefix)' >$f || return 1
+        . $f || return 1 ; rm -f $f
         [[ "$a" == "$EXPECTED_DEBUG_PREFIX:t_prefix_when_run_in_sourced_file()" ]]
     )
 }
