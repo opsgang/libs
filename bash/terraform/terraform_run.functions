@@ -34,15 +34,8 @@ KEEP_PLUGINS="${KEEP_PLUGINS:-}"
 # ... set to non-empty value to skip git checks and `terraform apply`
 DEVMODE="${DEVMODE:-}"
 
-__run_if_exists() {
-    local f="$1"
-    if declare -f $f >/dev/null 2>&1
-    then
-        d "... running $f function"
-        ! $f && e "... failed." &&  return 1
-    fi
-    return 0
-}
+# ... don't perform terraform-apply
+NO_APPLY="${NO_APPLY:-}"
 
 __show_env() {
     [[ -z "$DEVMODE" ]] && return 0
@@ -110,7 +103,7 @@ tf_export_governance_vars() {
     export TF_VAR_git_user="$GIT_USER"
     export TF_VAR_git_info="$GIT_INFO"
     export TF_VAR_build_url="$BUILD_URL"
-    __run_if_exists tf_custom_governance_vars || return 1
+    std::run_if_exists tf_custom_governance_vars || return 1
 }
 
 # @desc Returns the path to the terraform binary.
@@ -144,6 +137,7 @@ terraform_version() {
 __special_modes() {
     _disclaimer_devmode
     _disclaimer_keep_plugins
+    _disclaimer_no_apply
 }
 
 _disclaimer_devmode() {
@@ -167,6 +161,17 @@ _disclaimer_keep_plugins() {
         yellow_i "================================================="
         bold_i   "... will not delete previously downloaded"
         bold_i   "    terraform plugins."
+        yellow_i "================================================="
+    fi
+}
+
+_disclaimer_no_apply() {
+    local v='NO_APPLY'
+    if [[ ! -z "${!v}" ]] ; then
+        yellow_i "================================================="
+        yellow_i "= ACTIVATED: \$${v}"
+        yellow_i "================================================="
+        bold_i   "... will not run terraform apply"
         yellow_i "================================================="
     fi
 }
@@ -256,8 +261,27 @@ terraform_apply() {
         yellow_i "$opts"
         yellow_i "================================================="
     fi
-    [[ ! -z "$DEVMODE" ]] && yellow_i "DEVMODE - skipping terraform apply" && return 0
+    __skip_on "DEVMODE NO_APPLY" "terraform apply" && return 0
+
     eval "$TERRAFORM apply $opts"
+}
+
+__skip_on() {
+    local flags="$1" # ... we should skip if any of this list of vars is set
+    local msg="$2"   # ... info msg to print on skip
+    local var_name=""
+    local rc=1
+
+    for var_name in $flags; do
+        if [[ ! -z "${!var_name}" ]]; then
+            d "... env var \$$var_name set."
+            rc=0
+        fi
+    done
+
+    [[ $rc -eq 0 ]] && yellow_i "... skipping $msg"
+
+    return $rc
 }
 
 # @desc Wrapper cmd to perform terraform subcommands for `init` (or `remote cfg`/`get`), `plan`, `apply`.
@@ -355,13 +379,13 @@ terraform_run() {
 
         terraform_cleanup || exit 1
 
-        __run_if_exists terraform_preinit  || exit 1
+        std::run_if_exists terraform_preinit  || exit 1
 
         tf_export_governance_vars || exit 1
 
         terraform_init || exit 1
 
-        __run_if_exists terraform_postinit  || exit 1
+        std::run_if_exists terraform_postinit  || exit 1
 
         __show_env # if DEVMODE, will print out exported vars.
 
@@ -369,11 +393,11 @@ terraform_run() {
 
         no_unpushed_changes || exit 1
 
-        __run_if_exists terraform_preapply  || exit 1
+        std::run_if_exists terraform_preapply  || exit 1
 
         terraform_apply || exit 1
 
-        __run_if_exists terraform_postapply  || exit 1
+        std::run_if_exists terraform_postapply  || exit 1
 
     ) || return 1
 

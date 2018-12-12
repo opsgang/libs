@@ -45,6 +45,10 @@
     * reads env var `$DEVMODE`
     * or default val: `empty string`
 
+* `$NO_APPLY`: _... don't perform terraform-apply_
+    * reads env var `$NO_APPLY`
+    * or default val: `empty string`
+
 
 
 # FUNCTIONS

@@ -44,10 +44,39 @@ source_files() {
     return $rc
 }
 
-# @desc Checks a list of vars for undefined
-# or empty vals. 
+# @desc Run function if it exists.
 #
-# **Whitespace and _0_ are considered values.**
+# Pass name of function (and then optionally any params for function)
+#
+# Executes function *IF it exists*.
+#
+# Success if function executes correctly or does not exist.
+#
+# @example
+#   # ... run my_func() if exists, with args 'apple', 'banana'
+#   std::run_if_exists "my_func" apple banana
+#
+#   # ... run my_func() if exists, with arg containing spaces
+#   std::run_if_exists "my_func" "This whole sentence is arg1."
+#
+std::run_if_exists() {
+    local f="$1"
+    [[ -z "$f" ]] && red_e "... expects function name as 1st arg." && return 1
+
+    if declare -f "$f" >/dev/null 2>&1
+    then
+        d "... running '$f' function" && $f "${@:2}"
+        return $?
+    else
+        d "... function '$f()' not found"
+        return 0
+    fi
+}
+
+# @desc Checks a list of vars for undefined
+# or empty vals.
+#
+# **Whitespace or _0_ is not considered empty.**
 #
 # Returns 1 if any are undefined or empty.
 #
@@ -58,7 +87,7 @@ source_files() {
 required_vars() {
     local rc=0
     local required_vars="$1"
-    local this_var
+    local this_var=""
     for this_var in $required_vars; do
         if ! check_var_defined $this_var
         then
@@ -72,7 +101,7 @@ required_vars() {
 
 # @desc Checks if a var has an empty value.
 #
-# **Whitespace and _0_ are considered non-empty values.**
+# **Whitespace or _0_ is not considered empty.**
 #
 # Returns 1 if undefined / empty.
 #
@@ -80,15 +109,7 @@ required_vars() {
 #   # ... test to see $FOO and $BAR are non-empty.
 #   check_var_defined "FOO" || echo "FOO is empty or not defined"
 #
-check_var_defined() {
-    local var_name="$1"
-    local var_val="${!var_name}"
-    if [[ -z $var_val ]]; then
-        return 1
-    else
-        return 0
-    fi
-}
+check_var_defined() { [[ ! -z "${!1}" ]] ; }
 
 # @desc Prints a user-passed *single-line* str with all instances of certain chars
 # replaced by a safe character.
@@ -106,14 +127,14 @@ check_var_defined() {
 #
 # > To use `]` and/or `[` in Arg 2, they must appear at start of pattern in that order
 # > (after any leading `!` if you want to specify a disallowed list)
-# > 
+# >
 # > To use `-` in Arg2, it MUST appear as the last char.
 # > You can use named POSIX character classes e.g. [:blank:] or [:alnum:].
 #
 # * Arg 3: Optional: the list of chars to keep (*or replace if prefixed with* `!`)
 #
 # > To include a literal `!` in a list to replace, add another exclamation mark.
-# > 
+# >
 # > The default is strict, replacing all but alphanumerics and these chars:`_.:/=+-@`
 #
 # Call [safe_chars_def_list](#safe_chars_def_list) to get the default char list.
@@ -275,7 +296,7 @@ _semver_a_gt_b() {
 #
 # $BUILD_URL is a link to a CI/CD job's run.
 #
-# Returns 1 if BUILD_URL can not be determined. 
+# Returns 1 if BUILD_URL can not be determined.
 #
 # Use this to annotate your builds and deployments with governance metadata. e.g. the job run
 # should show you who built what when.
@@ -292,7 +313,7 @@ export_build_url() {
     elif [[ "$TRAVIS" == "true" ]]; then
         if required_vars "TRAVIS_REPO_SLUG TRAVIS_JOB_ID"
         then
-            BUILD_URL="https://travis-ci.org/$TRAVIS_REPO_SLUG/jobs/$TRAVIS_JOB_ID" 
+            BUILD_URL="https://travis-ci.org/$TRAVIS_REPO_SLUG/jobs/$TRAVIS_JOB_ID"
         fi
     fi
     [[ ! -z "$BUILD_URL" ]] && export BUILD_URL

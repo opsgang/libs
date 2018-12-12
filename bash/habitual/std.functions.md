@@ -29,6 +29,7 @@
 ## MISC. FUNCTIONS
 ---
 * [source\_files()](#source_files)
+* [std::run\_if\_exists()](#stdrun_if_exists)
 * [required\_vars()](#required_vars)
 * [check\_var\_defined()](#check_var_defined)
 * [str\_to\_safe\_chars()](#str_to_safe_chars)
@@ -76,12 +77,36 @@ IGNORE_MISSING=true source_files "default.cfg env.cfg project.cfg"
 
 ---
 
+### std::run\_if\_exists()
+
+Run function if it exists.
+
+Pass name of function (and then optionally any params for function)
+
+Executes function *IF it exists*.
+
+Success if function executes correctly or does not exist.
+
+#### Example
+
+```bash
+# ... run my_func() if exists, with args 'apple', 'banana'
+std::run_if_exists "my_func" apple banana
+
+# ... run my_func() if exists, with arg containing spaces
+std::run_if_exists "my_func" "This whole sentence is arg1."
+
+```
+
+
+---
+
 ### required\_vars()
 
 Checks a list of vars for undefined
-or empty vals. 
+or empty vals.
 
-**Whitespace and _0_ are considered values.**
+**Whitespace or _0_ is not considered empty.**
 
 Returns 1 if any are undefined or empty.
 
@@ -100,7 +125,7 @@ required_vars "FOO BAR" || exit 1
 
 Checks if a var has an empty value.
 
-**Whitespace and _0_ are considered non-empty values.**
+**Whitespace or _0_ is not considered empty.**
 
 Returns 1 if undefined / empty.
 
@@ -133,14 +158,14 @@ Or to create valid AWS tag values (there is a limited set of valid chars)
 
 > To use `]` and/or `[` in Arg 2, they must appear at start of pattern in that order
 > (after any leading `!` if you want to specify a disallowed list)
-> 
+>
 > To use `-` in Arg2, it MUST appear as the last char.
 > You can use named POSIX character classes e.g. [:blank:] or [:alnum:].
 
 * Arg 3: Optional: the list of chars to keep (*or replace if prefixed with* `!`)
 
 > To include a literal `!` in a list to replace, add another exclamation mark.
-> 
+>
 > The default is strict, replacing all but alphanumerics and these chars:`_.:/=+-@`
 
 Call [safe_chars_def_list](#safe_chars_def_list) to get the default char list.
@@ -250,7 +275,7 @@ Exports $BUILD_URL if available from a number of possible sources.
 
 $BUILD_URL is a link to a CI/CD job's run.
 
-Returns 1 if BUILD_URL can not be determined. 
+Returns 1 if BUILD_URL can not be determined.
 
 Use this to annotate your builds and deployments with governance metadata. e.g. the job run
 should show you who built what when.

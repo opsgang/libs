@@ -49,6 +49,16 @@ t_source_files() {
     run_t t_fail_if_file_exists_with_ignore
 }
 
+### std::run_if_exists()
+t_std::run_if_exists() {
+    SUITE="${FUNCNAME[0]#t_}()"
+    run_t t_func_exists_no_args
+    run_t t_func_exists_args
+    run_t t_func_does_not_exist
+    run_t t_func_name_not_passed
+    run_t t_invalid_func_name
+}
+
 ### check_var_defined
 t_check_var_defined() {
     SUITE="${FUNCNAME[0]#t_}()"
@@ -339,6 +349,76 @@ t_fail_if_file_bad_syntax_with_ignore() {
     ! IGNORE_MISSING=true source_files $f.1 $f.2 $f.3 >/dev/null 2>&1 || rc=1
     rm $f.1 $f.2 $f.3
     return $rc
+}
+
+
+t_func_exists_no_args() {
+    (
+        local o="" foo=""
+        foo() { echo "$@" ; }
+        o=$(DEBUG=true std::run_if_exists foo 2>&1)
+        [[ $? -ne 0 ]] && exit 1
+        echo "$o" | grep &>/dev/null "running 'foo' function" || exit 1
+    )
+}
+
+t_func_exists_args() {
+    (
+        local o="" foo=""
+        foo() { echo "foo says: $@" ; }
+        o=$(DEBUG=true std::run_if_exists foo arg1 arg2 2>&1)
+        [[ $? -ne 0 ]] && exit 1
+        echo "$o" | grep &>/dev/null 'foo says: arg1 arg2' || exit 1
+    )
+}
+
+t_func_does_not_exist() {
+    (
+        local o=""; unset foo
+        o=$(DEBUG=true std::run_if_exists foo 2>&1)
+        [[ $? -ne 0 ]] && exit 1 # should return success
+        echo "$o" | grep &>/dev/null "function 'foo()' not found" || exit 1
+    )
+}
+
+t_func_name_not_passed() {
+    (
+        local o=""
+        o=$(std::run_if_exists 2>&1)
+        [[ $? -eq 0 ]] && exit 1 # should fail, as arg not passed
+        echo "$o" | grep &>/dev/null 'expects function name as 1st arg' || exit 1
+    )
+}
+
+t_invalid_func_name() {
+    (
+        local o=""
+        o=$(DEBUG=true std::run_if_exists "; foo" 2>&1)
+        [[ $? -eq 0 ]] || exit 1 # should fail, as arg not passed
+        echo "$o" | grep &>/dev/null "function '; foo()' not found" || exit 1
+    )
+}
+
+t_called_func_success() {
+    (
+        local o="" foo="" rc=""
+        foo() { echo "ran foo" ; }
+        o=$(std::run_if_exists foo 2>&1)
+        rc=$?
+        echo "$o" | grep &>/dev/null 'ran foo' || exit 1
+        [[ $rc -eq 0 ]] || exit 1 # foo() should return 0
+    )
+}
+
+t_called_func_error() {
+    (
+        local o="" foo="" rc=""
+        foo() { echo "ran foo" ; return 212 ; }
+        o=$(std::run_if_exists foo 2>&1)
+        rc=$?
+        echo "$o" | grep &>/dev/null 'ran foo' || exit 1
+        [[ $rc -eq 212 ]] || exit 1 # foo() should return 212
+    )
 }
 
 ### Tests for logging functions
