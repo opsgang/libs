@@ -169,11 +169,11 @@ Some [globals](#globals) - $TERRAFORM, $TERRAFORM_INIT_OPTS, TERRAFORM_GET_OPTS 
 
 Runs `terraform apply` - for v0.11.0+, will add the -auto-approve to run it non-interactively.
 
-Some [globals](#globals) - $TERRAFORM, $TERRAFORM_APPLY_OPTS, $DEVMODE - affect behaviour.
+[Globals](#globals) - $TERRAFORM, $TERRAFORM_APPLY_OPTS, $DEVMODE, NO_APPLY - affect behaviour.
 
 Set $TERRAFORM_APPLY_OPTS to pass `apply` any other options.
 
-When $DEVMODE is set, `apply` is not actually run.
+When $DEVMODE or $NO_APPLY is set, `apply` is not actually run.
 
 
 ---
@@ -211,9 +211,11 @@ changes, and also to ensure that the git audit info is accurate.
 
 ##### lifecycle hooks
 
-> **CAVEAT** - if you are using any hooks to modify your actual infrastructure,
-> make them no-op if in $DEVMODE , as `terraform apply` will not run.
-> See terraform_postapply example below.
+> **CAVEAT** - if you are using any hooks **to modify your actual infrastructure**,
+> make them check for $DEVMODE (and possibly $NO_APPLY, depending on your needs)
+> and do nothing!
+>
+> See terraform_postapply example below for this kind of check.
 >
 > For custom governance vars see [tf_export_governance_vars](#tf_export_governance_vars).
 
@@ -252,7 +254,7 @@ changes, and also to ensure that the git audit info is accurate.
 
     # example: postapply func used to switch dns to route traffic from 'blue' to 'green' stack
     terraform_postapply() {
-        [[ -n "$DEVMODE" ]] && i "DEVMODE, so no-op." && return 0
+        [[ -n "${DEVMODE}${NO_APPLY}" ]] && i "not applying terraform, so no-op." && return 0
         stack=$(which_stack_is_not_live)
         set_dns "live-$stack.example.com" || return 1
     }

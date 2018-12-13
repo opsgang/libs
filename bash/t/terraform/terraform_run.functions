@@ -30,9 +30,9 @@ setup_terraform_stubs() {
     local trc="${2:-0}" # terraform return code
     TERRAFORM=terraform # use the stub declared in this setup
 
-    stub_terraform_version="$(echo -e "terraform_version() {\necho $v\n}")"
+    stub_terraform_version="terraform_version() { echo $v ; }"
 
-    stub_terraform=$(echo -e "terraform(){\necho \$*; return $trc\n}")
+    stub_terraform="terraform(){ echo \$* ; return $trc ; }"
 
     eval "$stub_terraform_version"
     eval "$stub_terraform"
@@ -46,7 +46,7 @@ setup_terraform_run_stubs() {
 
     setup_terraform_stubs "$v" $trc
 
-    stub_no_unpushed_changes="$(echo -e "no_unpushed_changes() {\nreturn $nrc\n}")"
+    stub_no_unpushed_changes="no_unpushed_changes() { return $nrc ; }"
     eval "$stub_no_unpushed_changes"
 
     for hook in $__HOOKS; do

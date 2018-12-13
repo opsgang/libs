@@ -46,7 +46,7 @@ t_source_files() {
     run_t t_fail_if_file_bad_syntax
     run_t t_fail_if_file_does_not_exist
     run_t t_succeed_if_missing_file_with_ignore
-    run_t t_fail_if_file_exists_with_ignore
+    run_t t_fail_if_file_bad_syntax_with_ignore
 }
 
 ### std::run_if_exists()
@@ -57,6 +57,8 @@ t_std::run_if_exists() {
     run_t t_func_does_not_exist
     run_t t_func_name_not_passed
     run_t t_invalid_func_name
+    run_t t_called_func_success
+    run_t t_called_func_error
 }
 
 ### check_var_defined
@@ -65,6 +67,42 @@ t_check_var_defined() {
     run_t t_non_empty_var_is_success
     run_t t_unset_var_is_error
     run_t t_empty_var_is_error
+}
+
+### std::trim_str()
+t_std::trim_str() {
+    SUITE="${FUNCNAME[0]#t_}()"
+    run_t t_leading_whitespace_removed
+    run_t t_trailing_whitespace_removed
+    run_t t_no_whitespace_unchanged
+    run_t t_whitespace_tabs
+    run_t t_whitespace_newlines
+}
+
+t_leading_whitespace_removed() {
+    local str="  leading spaces"
+    [[ $(std::trim_str "$str") == "leading spaces" ]]
+}
+
+t_trailing_whitespace_removed() {
+    local str="no removed whitespace"
+    [[ $(std::trim_str "$str") == "no removed whitespace" ]]
+}
+
+t_no_whitespace_unchanged() {
+    local str="trailing spaces    "
+    [[ $(std::trim_str "$str") == "trailing spaces" ]]
+}
+
+# ... tabs should be removed
+t_whitespace_tabs() {
+    local str="$(echo -e " \t remove leading tab too")"
+    [[ $(std::trim_str "$str") == "remove leading tab too" ]]
+}
+
+t_whitespace_newlines() {
+    local str="$(echo -e " \n remove leading newline too")"
+    [[ $(std::trim_str "$str") == "remove leading newline too" ]]
 }
 
 ### required_vars()

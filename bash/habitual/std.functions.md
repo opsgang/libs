@@ -32,6 +32,7 @@
 * [std::run\_if\_exists()](#stdrun_if_exists)
 * [required\_vars()](#required_vars)
 * [check\_var\_defined()](#check_var_defined)
+* [std::trim\_str()](#stdtrim_str)
 * [str\_to\_safe\_chars()](#str_to_safe_chars)
 * [safe\_chars\_def\_list()](#safe_chars_def_list)
 * [envsubst\_tokens\_list()](#envsubst_tokens_list)
@@ -134,6 +135,21 @@ Returns 1 if undefined / empty.
 ```bash
 # ... test to see $FOO and $BAR are non-empty.
 check_var_defined "FOO" || echo "FOO is empty or not defined"
+
+```
+
+
+---
+
+### std::trim\_str()
+
+Trim leading and trailing whitespace from a string
+
+#### Example
+
+```bash
+std::trim_str " <- spaces disappear! ->  "
+# ^^^ outputs "<- spaces disappear! ->"
 
 ```
 

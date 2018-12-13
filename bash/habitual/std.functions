@@ -111,6 +111,21 @@ required_vars() {
 #
 check_var_defined() { [[ ! -z "${!1}" ]] ; }
 
+# @desc Trim leading and trailing whitespace from a string
+#
+# @example
+#   std::trim_str " <- spaces disappear! ->  "
+#   # ^^^ outputs "<- spaces disappear! ->"
+#
+std::trim_str() {
+    local v="$*"
+    # ... remove leading
+    v="${v#"${v%%[![:space:]]*}"}"
+    # ... remove trailing
+    v="${v%"${v##*[![:space:]]}"}"
+    echo -n "$v"
+}
+
 # @desc Prints a user-passed *single-line* str with all instances of certain chars
 # replaced by a safe character.
 #
