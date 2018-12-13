@@ -1,6 +1,6 @@
 #!/bin/bash
 # vim: et sr sw=4 ts=4 smartindent syntax=sh:
-# TESTS terraform
+# TESTS terraform functions.
 #
 
 __CLEANUP_DIR="/var/tmp/functions.terraform.cleanup"
@@ -30,9 +30,9 @@ setup_terraform_stubs() {
     local trc="${2:-0}" # terraform return code
     TERRAFORM=terraform # use the stub declared in this setup
 
-    stub_terraform_version="$(echo -e "terraform_version() {\necho $v\n}")"
+    stub_terraform_version="terraform_version() { echo $v ; }"
 
-    stub_terraform=$(echo -e "terraform(){\necho \$*; return $trc\n}")
+    stub_terraform="terraform(){ echo \$* ; return $trc ; }"
 
     eval "$stub_terraform_version"
     eval "$stub_terraform"
@@ -46,7 +46,7 @@ setup_terraform_run_stubs() {
 
     setup_terraform_stubs "$v" $trc
 
-    stub_no_unpushed_changes="$(echo -e "no_unpushed_changes() {\nreturn $nrc\n}")"
+    stub_no_unpushed_changes="no_unpushed_changes() { return $nrc ; }"
     eval "$stub_no_unpushed_changes"
 
     for hook in $__HOOKS; do
@@ -137,12 +137,14 @@ t_terraform_apply() {
     run_t t_apply_lt_0_11_with_opts
     run_t t_apply_ge_0_11_with_opts
     run_t t_apply_skip_if_devmode
+    run_t t_apply_skip_if_no_apply
 }
 
 ### terraform_run
 t_terraform_run() {
     SUITE="${FUNCNAME[0]#t_}()"
     run_t t_run_in_devmode_skipping
+    run_t t_run_in_no_apply_skipping
     run_t t_run_full_lifecycle
     run_t t_run_fail_if_bad_working_dir
 }
@@ -164,12 +166,10 @@ t_fails_if_custom_governance_vars_does() {
     local rc=0
     rm -rf $d 2>/dev/null ; mkdir -p $d
     (
-        cd $d
-        tf_custom_governance_vars() {
-            return 1
-        }
+        cd $d ; local msg="RAN tf_custom_governance_vars()"
+        tf_custom_governance_vars() { echo "$msg" ; return 1; }
         o=$(tf_export_governance_vars 2>&1)
-        [[ $? -ne 0 ]] && echo "$o" | grep '... failed' >/dev/null
+        [[ $? -ne 0 ]] && echo "$o" | grep "$msg" >/dev/null
     ) || rc=1
     rm -rf $d 2>/dev/null ; return $rc
 }
@@ -196,6 +196,15 @@ t_run_in_devmode_skipping() {
         setup_terraform_stubs 0.8.8
         o=$(DEVMODE=true terraform_run 2>&1) || return 1
         echo "$o" | grep 'skipping git checks' >/dev/null || return 1
+        echo "$o" | grep 'skipping terraform apply' >/dev/null || return 1
+    )
+}
+
+t_run_in_no_apply_skipping() {
+    (
+        set -o pipefail
+        setup_terraform_run_stubs 0.8.8
+        o=$(NO_APPLY=true terraform_run 2>&1) || return 1
         echo "$o" | grep 'skipping terraform apply' >/dev/null || return 1
     )
 }
@@ -265,8 +274,16 @@ t_apply_skip_if_devmode() {
     (
         set -o pipefail
         setup_terraform_stubs 0.11.0
-        DEVMODE=true
-        o=$(terraform_apply 2>&1)
+        o=$(DEVMODE=true terraform_apply 2>&1)
+        [[ $? -eq 0 ]] && [[ $(echo "$o" | tail -n 1) =~ skipping\ terraform\ apply ]]
+    )
+}
+
+t_apply_skip_if_no_apply() {
+    (
+        set -o pipefail
+        setup_terraform_stubs 0.11.0
+        o=$(NO_APPLY=true terraform_apply 2>&1)
         [[ $? -eq 0 ]] && [[ $(echo "$o" | tail -n 1) =~ skipping\ terraform\ apply ]]
     )
 }
