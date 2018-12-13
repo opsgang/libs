@@ -198,6 +198,7 @@ check_for_changes() {
         __cd $d || exit 1
 
         ! in_git_clone && red_e "$(pwd) is not a git dir" && return 1;
+        git &>/dev/null --no-pager status # make sure index is up-to-date
         if git diff-index --quiet HEAD --
         then
             i "... none found."
