@@ -369,7 +369,7 @@ terraform_run() {
     __special_modes
 
     TERRAFORM=$(tf) || return 1
-    i "... using $tf"
+    i "... using $TERRAFORM"
 
     export TERRAFORM
 
