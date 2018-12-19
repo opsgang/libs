@@ -43,6 +43,7 @@ _run_safe_chars() {
 t_source_files() {
     SUITE="${FUNCNAME[0]#t_}()"
     run_t t_can_source_multiple_files
+    run_t t_can_source_files_with_spaces_in_path
     run_t t_fail_if_file_bad_syntax
     run_t t_fail_if_file_does_not_exist
     run_t t_succeed_if_missing_file_with_ignore
@@ -341,6 +342,19 @@ t_can_source_multiple_files() {
     out=$(source_files $f.1 $f.2 2>&1)
     echo $out | grep -Po '^foo bar$' >/dev/null || rc=1
     rm $f.1 $f.2
+    return $rc
+}
+
+t_can_source_files_with_spaces_in_path() {
+    local rc=0 out=""
+    local d="/var/tmp/space in name"
+    # ... create dir with spaces in the name
+    mkdir -p "$d"
+    echo "echo 'foo'">"$d/1"
+    echo "echo 'bar'">"$d/2"
+    out=$(source_files "$d/1" "$d/2" 2>&1)
+    echo $out | grep -Po '^foo bar$' >/dev/null || rc=1
+    rm "$d/1" "$d/2"
     return $rc
 }
 

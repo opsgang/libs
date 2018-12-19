@@ -63,15 +63,17 @@ Sources a list of files in to your current bash env.
 > However an existing file that is unreadable (due to file perms)
 > or contains bad syntax will still raise an error.
 
+*CAVEAT*: *quote each file arg separately*
+
 #### Example
 
 ```bash
 source_files "./foo /bar/foo ../foo"
 # or ...
-source_files "./foo" "/bar/spaces\ in-name"
+source_files "./foo" "/bar/spaces in name/foo"
 
 # ... ignore files that don't exist
-IGNORE_MISSING=true source_files "default.cfg env.cfg project.cfg"
+IGNORE_MISSING=true source_files "default.cfg" "env.cfg" "project.cfg"
 
 ```
 

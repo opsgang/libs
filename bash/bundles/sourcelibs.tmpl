@@ -17,9 +17,9 @@ __source() {
 
     local libs="$__OPSGANG_LIBS"
     for file in $libs; do
-        file_abs=$libdir/$file
+        file_abs="$libdir/$file"
         [[ ! -z $DEBUG ]] && echo "DEBUG $this: ... sourcing $file_abs" >&2
-        ! . $file_abs && echo "ERROR $this: could not source $file_abs" >&2 && rc=1
+        ! . "$file_abs" && echo "ERROR $this: could not source $file_abs" >&2 && rc=1
     done
     return $rc
 }

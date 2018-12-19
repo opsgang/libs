@@ -16,22 +16,24 @@
 # > However an existing file that is unreadable (due to file perms)
 # > or contains bad syntax will still raise an error.
 #
+# *CAVEAT*: *quote each file arg separately*
+#
 # @example
 #   source_files "./foo /bar/foo ../foo"
 #   # or ...
-#   source_files "./foo" "/bar/spaces\ in-name"
+#   source_files "./foo" "/bar/spaces in name/foo"
 #
 #   # ... ignore files that don't exist
-#   IGNORE_MISSING=true source_files "default.cfg env.cfg project.cfg"
+#   IGNORE_MISSING=true source_files "default.cfg" "env.cfg" "project.cfg"
 #
 source_files() {
-    local files="$*"
-    local f="" rc=0
+    local files=("$@")
+    local f="" i="" rc=0
 
-    for f in $files; do
-        if [[ -e $f ]]; then
+    for f in "${files[@]}"; do
+        if [[ -e "$f" ]]; then
             d "... sourcing $f"
-            ! . $f && e "... can not source $f" && rc=1
+            ! . "$f" && e "... can not source $f" && rc=1
         else
             if [[ -z "$IGNORE_MISSING" ]]; then
                 e "... $f does not exist. Can not source." && rc=1
