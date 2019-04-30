@@ -104,10 +104,10 @@ function strip_md(text) {
     }
 
     if (var_comment) {
-        vardoc = vardoc "\n* `\$" varname "`: _" var_comment "_\n" defaults
+        vardoc = vardoc "\n* `$" varname "`: _" var_comment "_\n" defaults
     }
     else {
-        vardoc = vardoc "\n* `\$" varname "`\n" defaults
+        vardoc = vardoc "\n* `$" varname "`\n" defaults
     }
 
 
