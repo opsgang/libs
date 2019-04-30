@@ -5,7 +5,8 @@
 
 # ... for logging functions 
 EXPECTED_PREFIX="$(basename $0)"
-EXPECTED_DEBUG_PREFIX="$(realpath -- $0)" # horrid, but no better way
+EXPECTED_DEBUG_PREFIX="$(basename -- $0)"
+EXPECTED_ABS_PATHS_PREFIX="$(realpath -- $0)" # horrid, but no better way
 
 # ... for str_to_safe_chars()
 STR_ASCII="$(for((i=32;i<=127;i++)) do printf \\$(printf '%03o\t' "$i"); done;printf "\n")@"
@@ -487,6 +488,7 @@ t_set_log_prefix() {
     run_t t_prefix_when_run_from_script_with_debug
     run_t t_prefix_when_run_in_subshell
     run_t t_prefix_when_run_in_sourced_file
+    run_t t_prefix_debug_abs_paths_set
 }
 
 ### d()
@@ -495,12 +497,14 @@ t_d() {
     run_t t_no_output_if_DEBUG_not_set
     run_t t_output_if_debug_set
     run_t t_no_debug_output_if_QUIET
+    run_t t_d_abs_paths_set
 }
 
 ### i()
 t_i() {
     SUITE="${FUNCNAME[0]#t_}()"
     run_t t_no_i_output_if_QUIET
+    run_t t_i_abs_paths_set
 }
 
 ### __stacktrace()
@@ -521,8 +525,18 @@ t_no_debug_output_if_QUIET() {
     [[ "$(QUIET=true DEBUG=true d 'should print nothing' 2>&1)" == "" ]]
 }
 
+t_d_abs_paths_set() {
+    echo "$(DEBUG=true DEBUG_ABS_PATHS=true d 'should print' 2>&1)" \
+    | grep -Po "^DEBUG $EXPECTED_ABS_PATHS_PREFIX:.*should print" >/dev/null
+}
+
 t_no_i_output_if_QUIET() {
     [[ "$(QUIET=true i 'should print nothing' 2>&1)" == "" ]]
+}
+
+t_i_abs_paths_set() {
+    echo "$(DEBUG_ABS_PATHS=true i 'should print' 2>&1)" \
+    | grep -Po "^INFO $EXPECTED_ABS_PATHS_PREFIX:.*should print" >/dev/null
 }
 
 t_no_output_if_DEBUG_not_set() {
@@ -551,6 +565,20 @@ t_prefix_when_run_in_subshell() {
         (
             [[ $(DEBUG=true FROM_STACKFRAME=0 set_log_prefix) == "$expected" ]]
         )
+    )
+}
+
+t_prefix_debug_abs_paths_set() {
+    local expected="$EXPECTED_ABS_PATHS_PREFIX:t_prefix_debug_abs_paths_set()"
+    (
+        [[ $(DEBUG=true DEBUG_ABS_PATHS=true FROM_STACKFRAME=0 set_log_prefix) == "$expected" ]]
+    )
+}
+
+t_prefix_no_debug_with_abs_paths() {
+    local expected="$EXPECTED_ABS_PATHS_PREFIX:t_prefix_debug_with_abs_paths()"
+    (
+        [[ $(DEBUG_ABS_PATHS=true FROM_STACKFRAME=0 set_log_prefix) == "$expected" ]]
     )
 }
 

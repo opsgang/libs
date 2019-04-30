@@ -18,6 +18,10 @@
     * reads env var `$DEBUG`
     * or default val: `empty string`
 
+* `$DEBUG_ABS_PATHS`: _... set in env to use abs paths to source files in any messages. (See [d()](#d))_
+    * reads env var `$DEBUG_ABS_PATHS`
+    * or default val: `empty string`
+
 * `$QUIET`: _... set in env to non-empty value to silence all messages apart from errors_
     * reads env var `$QUIET`
     * or default val: `empty string`
@@ -368,6 +372,13 @@ prints DEBUG msg (STDERR) with context prefix.
 Caller can pass multiple quoted strings as each line
 of the msg.
 _\n_ within a str is also treated as newline.
+
+Set DEBUG in env to turn on msgs at this level.
+
+Set DEBUG_ABS_PATHS in env to have abs paths to the source
+file in each DEBUG msgs.
+
+Set QUIET in the env to ignore DEBUG settings.
 
 #### Example
 
