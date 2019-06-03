@@ -14,6 +14,13 @@ STR_UTF8_COPYRIGHT="$INPUT_STR_ASCII$(printf '\xC2\xA9')"
 STR_UTF8_FLAT_E="cafe attache mate trema"
 UTF8_ACUTE_E="$(printf '\xC3\xA9')" # e with acute accent
 
+
+FIXTURES="$(dirname $BASH_SOURCE)/fixtures"
+SL_TMPL="$FIXTURES/singleline.tmpl"
+ML_TMPL="$FIXTURES/multiline.tmpl"
+EXPECTED_ML_RESULT="$FIXTURES/multiline.result"
+
+
 run_safe_chars_posix() {
     local loc=POSIX
     ( loc="$loc" _run_safe_chars "$1" "$2" "$3" ) || return 1
@@ -79,6 +86,122 @@ t_std::trim_str() {
     run_t t_no_whitespace_unchanged
     run_t t_whitespace_tabs
     run_t t_whitespace_newlines
+}
+
+### std::render_tmpl()
+t_std::render_tmpl() {
+    SUITE="${FUNCNAME[0]#t_}()"
+    run_t t_render_file_tmpl_not_given
+    run_t t_render_line_simple
+    run_t t_render_with_file_tmpl_as_var
+    run_t t_render_prefer_param_to_var
+    run_t t_render_file_unreadable
+    run_t t_render_multiline_tmpl
+    run_t t_render_var_defined_empty
+    run_t t_render_var_not_defined
+    run_t t_render_escaped_vars
+    run_t t_render_code_not_executed_by_default
+    run_t t_render_escape_breakouts_unless_already_escaped
+    run_t t_render_multiple_backslashes_code_not_executed
+}
+
+t_render_multiple_backslashes_code_not_executed() {
+    local f=$(mktemp) ; local rc=0
+    local file_tmpl="$FIXTURES/multiple_backslashes_for_breakouts.tmpl"
+    local var="should not be used"
+    std::render_tmpl >$f || return 1
+    diff $f $FIXTURES/some_backslashed_breakouts.result
+    rc=$? ; rm $f ; return $rc
+}
+
+t_render_escape_breakouts_unless_already_escaped() {
+    local f=$(mktemp) ; local rc=0
+    local file_tmpl="$FIXTURES/some_backslashed_breakouts.tmpl"
+    local var="should not be used"
+    std::render_tmpl >$f || return 1
+    diff $f $FIXTURES/some_backslashed_breakouts.result
+    rc=$? ; rm $f ; return $rc
+}
+
+t_render_code_is_executed() {
+    local f=$(mktemp) ; local rc=0
+    local file_tmpl="$FIXTURES/breakout.tmpl"
+    local allow_code="true"
+    std::render_tmpl >$f || return 1
+    diff $f $FIXTURES/breakout_allowed.result
+    rc=$? ; rm $f ; return $rc
+}
+
+t_render_code_not_executed_by_default() {
+    local f=$(mktemp) ; local rc=0
+    local file_tmpl="$FIXTURES/breakout.tmpl"
+    local var="should not be used"
+    std::render_tmpl >$f || return 1
+    diff $f $FIXTURES/breakout_not_allowed.result
+    rc=$? ; rm $f ; return $rc
+}
+
+t_render_escaped_vars() {
+    local f=$(mktemp) ; local rc=0
+    local file_tmpl="$FIXTURES/escaped_vars.tmpl"
+    local var="should not be used"
+    std::render_tmpl >$f || return 1
+    diff $f $FIXTURES/escaped_vars.result
+    rc=$? ; rm $f ; return $rc
+}
+
+t_render_file_tmpl_not_given() {
+    std::render_tmpl 2>&1 \
+    | grep -q 'required_vars().* \$file_tmpl'
+}
+
+t_render_var_not_defined() {
+    local f=$(mktemp) ; local rc=0
+    local file_tmpl="$ML_TMPL" apellido="Bar"
+    std::render_tmpl >$f || return 1
+    diff $f $FIXTURES/var_not_defined.result
+    rc=$? ; rm $f ; return $rc
+}
+
+t_render_var_defined_empty() {
+    local f=$(mktemp) f2=$(mktemp)
+    local rc=0
+    echo '$fruit' > $f
+    ( fruit="" std::render_tmpl "$f" > $f2 )
+
+    diff $f2 <(echo ""); rc=$? ; rm $f $f2 ; return $rc
+
+}
+
+t_render_multiline_tmpl() {
+    local f=$(mktemp) ; local rc=0
+    local file_tmpl="$ML_TMPL" prenombre="Foo" apellido="Bar"
+    std::render_tmpl >$f || return 1
+    diff $f $EXPECTED_ML_RESULT
+    rc=$? ; rm $f ; return $rc
+}
+
+t_render_line_simple() {
+    local number=2 fruit="apple"
+    [[ "$(std::render_tmpl $SL_TMPL)" == "I eat 2 apples." ]]
+}
+
+t_render_with_file_tmpl_as_var() {
+    local file_tmpl="$SL_TMPL" number=2 fruit="apple"
+    [[ "$(std::render_tmpl)" == "I eat 2 apples." ]]
+}
+
+t_render_prefer_param_to_var() {
+    local file_tmpl="/path/not/exist" number=2 fruit="apple"
+    [[ "$(std::render_tmpl "$SL_TMPL")" == "I eat 2 apples." ]]
+}
+
+t_render_file_unreadable() {
+    local f=$(mktemp) ; local rc=0
+    ! cp $SL_TMPL $f && echo >&2 "ERROR: could not copy template to $f" && return 1
+    ! chmod 0333 $f && echo >&2 "ERROR: could not change file mode" && return 1
+    std::render_tmpl "$f" 2>&1 | grep -q "$f is not readable"
+    rc=$? ; rm -f $f ; return $rc
 }
 
 t_leading_whitespace_removed() {

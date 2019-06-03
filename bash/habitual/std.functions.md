@@ -37,6 +37,7 @@
 * [required\_vars()](#required_vars)
 * [check\_var\_defined()](#check_var_defined)
 * [std::trim\_str()](#stdtrim_str)
+* [std::render\_tmpl()](#stdrender_tmpl)
 * [str\_to\_safe\_chars()](#str_to_safe_chars)
 * [safe\_chars\_def\_list()](#safe_chars_def_list)
 * [envsubst\_tokens\_list()](#envsubst_tokens_list)
@@ -156,6 +157,53 @@ Trim leading and trailing whitespace from a string
 ```bash
 std::trim_str " <- spaces disappear! ->  "
 # ^^^ outputs "<- spaces disappear! ->"
+
+```
+
+
+---
+
+### std::render\_tmpl()
+
+Replaces bash vars (and optionally executes bash code) in a template file.
+
+An empty var value will render as nothing in the tmpl.
+You can literal dollars with a backslash.
+
+The path to the template file can be passed as an argument,
+or set as the value to $file_tmpl before calling the function.
+
+By default, any $() or backticks in the tmpl will be escaped
+unless already preceded with backslash. Multiple backslashes before a $( or backtick
+are collapsed to a single backslash. No sneaky executing bash that way I'm afraid.
+
+If you really want to let code execute in the tmpl when you call this function,
+pass "true" as 2nd param, or set allow_code=true before calling function.
+But remember that if you are not in control of template content, this is a security
+risk - $(rm -rf *.* anyone???)
+
+> *IMPORTANT - MULTIPLE TRAILING NEWLINES IN TMPL:*
+> If these must be preserved, don't use this function.
+> In fact, reconsider using bash at all.
+> There are many contexts where bash will swallow trailing newlines
+> e.g. when reading with command expansion, subshells, inline file handles
+
+#### Example
+
+```bash
+# /path/to/tmpl contains: I eat $number ${fruit}s.
+
+fruit=apple number=2 std::render_tmpl "/path/to/tmpl"
+# ^^^ outputs "I eat 2 apples"
+
+file_tmpl="/path/to/tmpl"
+fruit=banana number=3 std::render_tmpl # no param needed as file_tmpl set
+# ^^^ outputs "I eat 3 bananas"
+
+# allow code to execute.
+# /path/to/tmpl2 contains : I say $(echo Howdy Pardner!!! )
+allow_code=true std::render_tmpl "/path/to/tmpl2"
+# ^^^ outputs "I say Howdy Pardner!!! "
 
 ```
 
