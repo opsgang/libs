@@ -5,12 +5,26 @@
 language: none
 
 env:
-  - secure: gX7Rt/i0/C05NCD2XS1gTssLtul+rbRdEdtuNSFpegu8Fz85PpAnB+MQlirqQ9M9ObPSSVn599EJo0QUX1Hxx1oBvW11jA7p8iyLea6agEVLY7KBT1rA95TX81O3UwYECpN/hoiDih6hAwRL/em6yGvjqREYkZKKhn0foJ9RM7Xb74BCW8lxEZSSk4JFJssv2PNGgDhbBKfcD1Xk5sqTINleC3x/IpntyphCBFNso3GUOquRSVGtnhU+fWtHSZ2YAr6W3Jy9fUaTcUDbQ/WFJkevmQX7ubCPzuusfZdygUsOQtrbi0vP31kR2vomqH6GKo9pLdCavjlCig1xR2VqqA==
+  global:
+    - CIUSER_HOME: /home/ciuser
+    - CIUSER_BUILD_DIR: /home/ciuser/build
+    - CIUSER_RESULTS_DIR: /home/ciuser/shippable/testresults
+    - BASH_LIBS_DIR: /home/ciuser/build/bash
+    - NVM_DIR: /home/ciuser/.nvm
+    - CONCURRENT_TESTS: 4
+    - TEST_ROOT: bats/habitual/std/__stacktrace.bats
 
 build:
 
   ci:
-    - chmod a+x shippable.*.sh ; ( ./shippable.build.sh && ./shippable.test.sh )
+    - chmod a+x shippable.*.sh ;
+      (
+        ./shippable.build.sh
+        && ./shippable.create_ciuser.sh
+        && su -c "./shippable.test.sh" ciuser ; rc=$? ;
+        cp -r ${CIUSER_RESULTS_DIR}/*.xml shippable/testresults ;
+        exit $rc
+      )
 
   on_success: ./bash/bundles/release
 
