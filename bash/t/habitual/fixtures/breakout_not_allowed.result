@@ -1,0 +1,10 @@
+Let's embed some bash inline.
+$(echo "Break Out!!! sudo rm -rf /* anyone?")
+
+Or anything in the env ...
+$(export SUPER_SECRET=wibble ; export | grep SUPER_SECRET)
+
+Or backticks ...
+`echo this is from backticks`
+
+A man could do a lot of damage with the wrong template ...

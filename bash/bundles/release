@@ -13,7 +13,7 @@ release() {
 
     rm -rf $RELEASE_DIR 2>/dev/null
 
-    if [[ "$IS_GIT_TAG" == "true" ]] || [[ "$IS_RELEASE" == "true" ]]; then
+    if [[ "$IS_GIT_TAG" == "true" ]] ; then
 
         echo "shippable vars:"
         echo "BRANCH: $BRANCH"

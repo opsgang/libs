@@ -128,6 +128,78 @@ std::trim_str() {
     echo -n "$v"
 }
 
+# @desc Replaces bash vars (and optionally executes bash code) in a template file.
+#
+# An empty var value will render as nothing in the tmpl.
+# You can literal dollars with a backslash.
+#
+# The path to the template file can be passed as an argument,
+# or set as the value to $file_tmpl before calling the function.
+#
+# By default, any $() or backticks in the tmpl will be escaped
+# unless already preceded with backslash. Multiple backslashes before a $( or backtick
+# are collapsed to a single backslash. No sneaky executing bash that way I'm afraid.
+#
+# If you really want to let code execute in the tmpl when you call this function,
+# pass "true" as 2nd param, or set allow_code=true before calling function.
+# But remember that if you are not in control of template content, this is a security
+# risk - $(rm -rf *.* anyone???)
+#
+# > *IMPORTANT - MULTIPLE TRAILING NEWLINES IN TMPL:*
+# > If these must be preserved, don't use this function.
+# > In fact, reconsider using bash at all.
+# > There are many contexts where bash will swallow trailing newlines
+# > e.g. when reading with command expansion, subshells, inline file handles
+#
+# @example
+#   # /path/to/tmpl contains: I eat $number ${fruit}s.
+#   
+#   fruit=apple number=2 std::render_tmpl "/path/to/tmpl"
+#   # ^^^ outputs "I eat 2 apples"
+#   
+#   file_tmpl="/path/to/tmpl"
+#   fruit=banana number=3 std::render_tmpl # no param needed as file_tmpl set
+#   # ^^^ outputs "I eat 3 bananas"
+#   
+#   # allow code to execute.
+#   # /path/to/tmpl2 contains : I say $(echo Howdy Pardner!!! )
+#   allow_code=true std::render_tmpl "/path/to/tmpl2"
+#   # ^^^ outputs "I say Howdy Pardner!!! "
+#
+std::render_tmpl() {
+    local file_tmpl="${1:-$file_tmpl}"
+    local allow_code="${2:-$allow_code}" # default is to not execute code on render.
+    required_vars "file_tmpl" || return 1
+    [[ ! -r "$file_tmpl" ]] && e "$file_tmpl is not readable" && return 1
+
+    local d="" delim="__render_tmpl__" cmd=""
+
+    d=$(< "$file_tmpl")
+
+    if [[ ! "$allow_code" =~ ^(allow|true|y|yes|1)$ ]]; then
+        d="$(_stop_breakouts_in_render "$d")"
+    fi
+
+    cmd="cat <<$delim"$'\n'"$d"$'\n'"$delim" # creates a heredoc
+    eval "$cmd"
+
+    # ... check eval worked syntactically ...
+    [[ $? -ne 0 ]] && e "... failed to render file $file_tmpl" && return 1
+
+    return 0
+}
+
+_stop_breakouts_in_render() {
+    local d="$1"
+    echo "$d" \
+    | sed \
+        -e 's/\([^\\]\)`/\1\\`/g' `# catch backticks preceded by non-backslash` \
+        -e 's/^`/\\`/g' `# catch backticks at start of line` \
+        -e 's/\([^\\]\)\$(/\1\\\$(/g' `# $( preceded by non-backslash` \
+        -e 's/^\$(/\\\$(/g' `# $( at start of line` \
+        -e 's/\\\+\([`\$]\)/\\\1/g' `# reduce n backslashes to 1 before $( or backtick`
+}
+
 # @desc Prints a user-passed *single-line* str with all instances of certain chars
 # replaced by a safe character.
 #

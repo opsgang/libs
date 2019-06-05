@@ -1,0 +1,10 @@
+Let's embed some bash inline.
+Break Out!!! sudo rm -rf /* anyone?
+
+Or anything in the env ...
+declare -x SUPER_SECRET="wibble"
+
+Or backticks ...
+this is from backticks
+
+A man could do a lot of damage with the wrong template ...

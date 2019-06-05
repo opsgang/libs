@@ -62,7 +62,7 @@ run_t() {
 
 funcs_to_test() {
     local src="$1"
-    grep -Po '^(function +)?[\w_]+ *\(\) *{ *$' $src | sed -e 's/\([^ (]\+\).*/\1/'
+    grep -Po '^(function +)?[\w:_]+ *\(\) *{ *$' $src | sed -e 's/\([^ (]\+\).*/\1/'
 }
 
 source_src_and_deps() {
