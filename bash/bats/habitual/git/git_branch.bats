@@ -35,6 +35,14 @@ teardown() {
     rm -rf $BATS_TMPDIR/$BATS_TEST_NAME || true
 }
 
+use_test_repo_copy() {
+    cp -r $TMPL_REPO $TMPDIR
+    cd $TEST_REPO
+    git reset --hard &>/dev/null || true
+    git config user.name $_GIT_USER
+    git config user.email $_GIT_EMAIL
+}
+
 @test "git_branch fails if run against a non-git dir" {
 
     # ... set up
@@ -54,11 +62,7 @@ teardown() {
     export BRANCH_NAME="new-branch"
     export TAG_NAME="new-tag"
     # ... set up
-    cp -r $TMPL_REPO $TMPDIR
-    cd $TEST_REPO
-    git reset --hard &>/dev/null || true
-    git config user.name $_GIT_USER
-    git config user.email $_GIT_EMAIL
+    use_test_repo_copy
     git checkout -b $BRANCH_NAME &>/dev/null
     git tag -a "$TAG_NAME" -m 'bah'
 
