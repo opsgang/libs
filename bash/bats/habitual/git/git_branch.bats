@@ -57,8 +57,8 @@ teardown() {
     cp -r $TMPL_REPO $TMPDIR
     cd $TEST_REPO
     git reset --hard &>/dev/null || true
-    git config user.name $_USER
-    git config user.email $_EMAIL
+    git config user.name $_GIT_USER
+    git config user.email $_GIT_EMAIL
     git checkout -b $BRANCH_NAME &>/dev/null
     git tag -a "$TAG_NAME" -m 'bah'
 
