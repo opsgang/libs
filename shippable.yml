@@ -12,7 +12,7 @@ env:
     - BASH_LIBS_DIR: /home/ciuser/build/bash
     - NVM_DIR: /home/ciuser/.nvm
     - CONCURRENT_TESTS: 4
-    - TEST_ROOT: bats/habitual/std/__stacktrace.bats
+    - TEST_ROOT: bats/
 
 build:
 
