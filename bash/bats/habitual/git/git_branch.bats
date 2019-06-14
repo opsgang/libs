@@ -35,9 +35,6 @@ teardown() {
     rm -rf $BATS_TMPDIR/$BATS_TEST_NAME || true
 }
 
-use_test_repo_copy() {
-}
-
 @test "git_branch fails if run against a non-git dir" {
 
     # ... set up
