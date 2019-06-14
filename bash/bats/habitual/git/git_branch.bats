@@ -36,12 +36,6 @@ teardown() {
 }
 
 use_test_repo_copy() {
-    cp -r $TMPL_REPO $TMPDIR
-
-    cd $TEST_REPO
-    git reset --hard &>/dev/null || true
-    git config user.name $_USER
-    git config user.email $_EMAIL
 }
 
 @test "git_branch fails if run against a non-git dir" {
@@ -63,12 +57,16 @@ use_test_repo_copy() {
     export BRANCH_NAME="new-branch"
     export TAG_NAME="new-tag"
     # ... set up
-    use_test_repo_copy &>/dev/null || true
+    cp -r $TMPL_REPO $TMPDIR
+    cd $TEST_REPO
+    git reset --hard &>/dev/null || true
+    git config user.name $_USER
+    git config user.email $_EMAIL
     git checkout -b $BRANCH_NAME &>/dev/null
-    run git tag -a "$TAG_NAME" -m 'bah'
+    git tag -a "$TAG_NAME" -m 'bah'
 
     # ... run
-    #run git_branch
+    run git_branch
     print_on_err
 
     # ... verify
