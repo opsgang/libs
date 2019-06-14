@@ -64,8 +64,8 @@ use_test_repo_copy() {
     export TAG_NAME="new-tag"
     # ... set up
     use_test_repo_copy &>/dev/null || true
-    git --no-pager checkout -b $BRANCH_NAME &>/dev/null
-    git --no-pager tag -a $TAG_NAME -m 'bah' &>/dev/null
+    git checkout -b $BRANCH_NAME &>/dev/null
+    git tag -a "$TAG_NAME" -m 'bah' &>/dev/null
 
     # ... run
     run git_branch
