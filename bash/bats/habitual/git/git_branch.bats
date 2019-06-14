@@ -65,10 +65,10 @@ use_test_repo_copy() {
     # ... set up
     use_test_repo_copy &>/dev/null || true
     git checkout -b $BRANCH_NAME &>/dev/null
-    git tag -a "$TAG_NAME" -m 'bah' &>/dev/null
+    run git tag -a "$TAG_NAME" -m 'bah'
 
     # ... run
-    run git_branch
+    #run git_branch
     print_on_err
 
     # ... verify
