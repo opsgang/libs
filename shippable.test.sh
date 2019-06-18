@@ -29,6 +29,12 @@ run_bash_tests() {
     return $rc
 }
 
+# ... required by the git.functions tests
+#
+# Must be run before kicking off bats with multiple concurrent
+# jobs or else race-conditions between tests and the repo
+# creation.
+#
 create_tmpl_repo() {
     local tmpl_repo="/var/tmp/opsgang/libs/repo"
     local src_repo_url="https://github.com/opsgang/libs"
