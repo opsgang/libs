@@ -189,3 +189,23 @@ load git
     [[ $output == "repo:$GIT_REPO_URL sha1:$sha tag:$NEW_TAG branch:-no branch-" ]]
 
 }
+
+@test "git_info_str if sha is empty string" {
+    # ... setup - working dir is non-git dir
+    use_test_repo_copy
+    git checkout -b $NEW_BRANCH &>/dev/null
+
+    echo 'new commit' >>README.md
+    git commit -am "arbitrary change for test $BATS_TEST_NAME"
+
+    git_sha() { echo ""; }
+
+    # ... run
+    run git_info_str
+    print_on_err
+
+    # ... verify
+    [[ $status -eq 1 ]]
+    echo $output | grep -q 'requires a sha1 as second param'
+
+}
