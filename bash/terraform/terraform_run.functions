@@ -156,7 +156,7 @@ _disclaimer_devmode() {
 
 _disclaimer_keep_plugins() {
     local v='KEEP_PLUGINS'
-    if [[ ! -z "${!v}" ]] ; then
+    if [[ -n "${!v}" ]] ; then
         yellow_i "================================================="
         yellow_i "= ACTIVATED: \$${v}"
         yellow_i "================================================="
