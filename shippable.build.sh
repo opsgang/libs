@@ -7,9 +7,19 @@ NVM_DIR=$CIUSER_HOME/.nvm
 
 install_tools() {
     sudo apt-get update
-    sudo apt-get install -y coreutils realpath shellcheck
+    sudo apt-get install -y coreutils realpath curl xz-utils
     sort --help | grep -q -- '--version-sort' || return 1 # ...verify coreutils
     realpath $PWD >/dev/null || return 1                  # ... verify realpath
+    # install the latest version of shellcheck
+    (
+        cd /tmp \
+        && curl -o shellcheck.tar.xz \
+            https://storage.googleapis.com/shellcheck/shellcheck-stable.linux.x86_64.tar.xz \
+        && tar xvf shellcheck.tar.xz \
+        && mv shellcheck-stable/shellcheck /usr/bin/ \
+        && chmod +x /usr/bin/shellcheck
+    ) || return 1
+    shellcheck --version | grep -E '^version:' || return 1 # ... verify shellcheck and print version
 }
 
 # workarounds because of quirky behaviour when building
