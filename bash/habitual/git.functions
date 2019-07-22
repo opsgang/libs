@@ -277,7 +277,7 @@ in_git_clone() {
     local rc=0
     local d="$1"
     (
-        __cd $d || exit 1
+        __cd "$d" || exit 1
         git --no-pager rev-parse --is-inside-work-tree >/dev/null 2>&1
     ) || rc=1
     return $rc
