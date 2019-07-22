@@ -128,8 +128,8 @@ tf() {
 #
 terraform_version() {
     [[ -z "$TERRAFORM" ]] && TERRAFORM=$(tf)
-    $TERRAFORM --version | grep -Po '(?<=Terraform v)[\d\.]+'
-    if [[ $? -ne 0 ]] ; then
+    
+    if ! $TERRAFORM --version | grep -Po '(?<=Terraform v)[\d\.]+' ; then
         red_e "... could not determine version: used $TERRAFORM --version"
         return 1
     fi
