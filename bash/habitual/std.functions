@@ -484,7 +484,7 @@ set_log_prefix() {
             str=$(basename "$f")
         fi
         [[ -n "$func" ]] && str="$str:$func()"
-        echo $str
+        echo "$str"
     fi
 }
 
