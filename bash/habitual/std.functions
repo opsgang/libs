@@ -478,12 +478,12 @@ set_log_prefix() {
 
         # ... if the cwd is changed, realpath may not work, so fall back to just $src
         f=$(realpath -- "$src" 2>/dev/null); [[ -z "$f" ]] && f=$src
-        if [[ ! -z "$DEBUG_ABS_PATHS" ]]; then
+        if [[ -n "$DEBUG_ABS_PATHS" ]]; then
             str=$f
         else
             str=$(basename "$f")
         fi
-        [[ ! -z "$func" ]] && str="$str:$func()"
+        [[ -n "$func" ]] && str="$str:$func()"
         echo $str
     fi
 }
