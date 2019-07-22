@@ -250,7 +250,8 @@ sha_in_origin() {
         return 1
     fi
 
-    b=$(git branch -r --contains ${sha} 2>/dev/null)
+    b=$(git branch -r --contains "$sha" 2>/dev/null)
+    #shellcheck disable=SC2181
     if [[ $? -ne 0 ]] || [[ -z "$b" ]]; then
         red_e "This commit ($sha) does not exist on origin."
         red_e "Did you push these changes?"
