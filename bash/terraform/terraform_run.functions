@@ -366,7 +366,7 @@ __skip_on() {
 #       terraform_run "/my/tf/dir" || exit 1 # unless DEVMODE, will apply terraform and switch dns.
 #
 terraform_run() {
-    local wd="$1" tf=""
+    local wd="$1"
 
     __special_modes
 
@@ -378,7 +378,7 @@ terraform_run() {
     (
         if [[ "$wd" ]]; then
             i "... changing to working dir $wd"
-            ! cd $wd && red_e "... could not change to $wd" && exit 1
+            ! cd "$wd" && red_e "... could not change to $wd" && exit 1
         fi
 
         terraform_cleanup || exit 1
