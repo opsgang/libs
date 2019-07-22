@@ -29,11 +29,12 @@
 #
 source_files() {
     local files=("$@")
-    local f="" i="" rc=0
+    local f="" rc=0
 
     for f in "${files[@]}"; do
         if [[ -e "$f" ]]; then
             d "... sourcing $f"
+            #shellcheck disable=SC1090
             ! . "$f" && e "... can not source $f" && rc=1
         else
             if [[ -z "$IGNORE_MISSING" ]]; then
