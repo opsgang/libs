@@ -93,7 +93,7 @@ required_vars() {
     local required_vars="$1"
     local this_var=""
     for this_var in $required_vars; do
-        if ! check_var_defined $this_var
+        if ! check_var_defined "$this_var"
         then
             failed="${failed}\$$this_var "
             rc=1
