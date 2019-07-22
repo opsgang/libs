@@ -180,10 +180,12 @@ git_vars() {
 #   DEVMODE=true no_unpushed_changes || exit 1
 #
 no_unpushed_changes() {
-    [[ ! -z "${DEVMODE}" ]] && yellow_i "DEVMODE - skipping git checks" && return 0;
+    [[ -n "${DEVMODE}" ]] && yellow_i "DEVMODE - skipping git checks" && return 0;
 
-    local d=$(pwd)
-    local sha=$(git_sha)
+    local d="" sha=""
+    
+    d=$(pwd)
+    sha=$(git_sha)
 
     check_for_changes "$d" || return 1
     sha_in_origin "$sha" || return 1
