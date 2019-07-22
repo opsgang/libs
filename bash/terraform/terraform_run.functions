@@ -143,7 +143,7 @@ __special_modes() {
 
 _disclaimer_devmode() {
     local v='DEVMODE'
-    if [[ ! -z "${!v}" ]] ; then
+    if [[ -n "${!v}" ]] ; then
         yellow_i "================================================="
         yellow_i "= ACTIVATED: \$${v}"
         yellow_i "================================================="
