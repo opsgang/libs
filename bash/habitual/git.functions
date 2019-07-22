@@ -146,13 +146,20 @@ git_vars() {
     ! in_git_clone && e "... $PWD is not inside a git repo" && return 1
 
     GIT_BRANCH="$(git_branch)" || return 1 ; export GIT_BRANCH
-    export GIT_TAG="$(git_tag)"
-    export GIT_REPO="$(git_repo)"
-    export GIT_SHA="$(git_sha)"
-    export GIT_USER="$(git_user)"
-    export GIT_EMAIL="$(git_email)"
-    export GIT_ID="$(git_id)" # git user and email, space separated
-    export GIT_INFO=$(_git_info_str "$GIT_REPO" "$GIT_SHA" "$GIT_TAG" "$GIT_BRANCH")
+    GIT_TAG="$(git_tag)"
+    export GIT_TAG
+    GIT_REPO="$(git_repo)"
+    export GIT_REPO
+    GIT_SHA="$(git_sha)"
+    export GIT_SHA
+    GIT_USER="$(git_user)"
+    export GIT_USER
+    GIT_EMAIL="$(git_email)"
+    export GIT_EMAIL
+    GIT_ID="$(git_id)" # git user and email, space separated
+    export GIT_ID
+    GIT_INFO=$(_git_info_str "$GIT_REPO" "$GIT_SHA" "$GIT_TAG" "$GIT_BRANCH")
+    export GIT_INFO
 
 }
 
