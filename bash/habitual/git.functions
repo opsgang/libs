@@ -68,10 +68,12 @@ git_email() {
 # @desc Prints user.name user.email (from git config)
 # Returns 1 if user.name not set.
 git_id() {
-    local u=$(git_user)
-    local e=$(git_email)
+    local u="" e=""
+    
+    u=$(git_user)
+    e=$(git_email)
     [[ -z "$u" ]] && echo "" && return 1
-    echo $u $e
+    echo "$u" "$e"
 }
 
 # @desc Outputs a str formed of repo, sha1, tag and branch info.
