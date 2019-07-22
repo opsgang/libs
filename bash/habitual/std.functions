@@ -113,7 +113,7 @@ required_vars() {
 #   # ... test to see $FOO and $BAR are non-empty.
 #   check_var_defined "FOO" || echo "FOO is empty or not defined"
 #
-check_var_defined() { [[ ! -z "${!1}" ]] ; }
+check_var_defined() { [[ -n "${!1}" ]] ; }
 
 # @desc Trim leading and trailing whitespace from a string
 #
