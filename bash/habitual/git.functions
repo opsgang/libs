@@ -44,7 +44,7 @@ git_repo() {
 
 # @desc Prints sha of current commit - up to $GIT\_SHA\_LEN chars.
 git_sha() {
-    ${GIT} rev-parse --short=${GIT_SHA_LEN} --verify HEAD
+    ${GIT} rev-parse --short="$GIT_SHA_LEN" --verify HEAD
 }
 
 # @desc Prints out the git-tag on the current commit (exact match only)
