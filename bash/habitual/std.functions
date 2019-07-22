@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 # vim: et sr sw=4 ts=4 smartindent syntax=sh:
 
 # @overview
@@ -653,17 +653,17 @@ __stacktrace() {
     local frame=$start_index str=""
 
     while true; do
-        local st="" ln="" func="" file=""
+        local st="" ln="" func="" file="" indent="" tmpl=""
 
-        st=$(caller $frame) || break
+        st=$(caller "$frame") || break
 
         [[ "$st" =~ $__CALLER_REGX ]] \
         && ln="${BASH_REMATCH[1]}" \
         && func="${BASH_REMATCH[2]}" \
         && file="${BASH_REMATCH[3]}"
 
-        local tmpl="%$(( $(( frame - $start_index )) * 2 ))s"
-        local indent="$(printf $tmpl)"
+        tmpl="%$(( $(( frame - $start_index )) * 2 ))s"
+        indent="$(printf $tmpl)"
 
         str_fmt="${indent}${func}() (file: $file, line: $ln)\n"
         str="$str$str_fmt"
