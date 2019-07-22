@@ -196,6 +196,7 @@ std::render_tmpl() {
 
 _stop_breakouts_in_render() {
     local d="$1"
+    #shellcheck disable=SC2016
     echo "$d" \
     | sed \
         -e 's/\([^\\]\)`/\1\\`/g' `# catch backticks preceded by non-backslash` \
