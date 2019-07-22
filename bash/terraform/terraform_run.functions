@@ -221,12 +221,12 @@ terraform_init() {
         get_cmd="get" # need to get modules first.
     fi
 
-    if [[ ! -z "$DEVMODE" ]]; then
-        if [[ ! -z "$get_cmd" ]]; then
+    if [[ -n "$DEVMODE" ]]; then
+        if [[ -n "$get_cmd" ]]; then
             yellow_i "================================================="
             yellow_i "... will run '$get_cmd' to fetch any modules"
         fi
-        if [[ ! -z "$init_opts" ]]; then
+        if [[ -n "$init_opts" ]]; then
             yellow_i "================================================="
             yellow_i "= terraform $init_cmd opts:"
             yellow_i "================================================="
@@ -236,7 +236,7 @@ terraform_init() {
     fi
 
     # ... run terraform get if needed
-    [[ ! -z $get_cmd ]] && ! eval "$TERRAFORM get $TERRAFORM_GET_OPTS" && return 1
+    [[ -n $get_cmd ]] && ! eval "$TERRAFORM get $TERRAFORM_GET_OPTS" && return 1
     # ... now run init
     eval "$TERRAFORM $init_cmd $init_opts"
 }
