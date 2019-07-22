@@ -275,7 +275,7 @@ __skip_on() {
     local rc=1
 
     for var_name in $flags; do
-        if [[ ! -z "${!var_name}" ]]; then
+        if [[ -n "${!var_name}" ]]; then
             d "... env var \$$var_name set."
             rc=0
         fi
