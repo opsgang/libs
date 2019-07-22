@@ -22,6 +22,10 @@
     * reads env var `$GIT`
     * or default val: `git --no-pager`
 
+* `$GIT_SORT`: _valid vals: semver | taggerdate. Empty string forces lexical sort._
+    * reads env var `$GIT_SORT`
+    * or default val: `empty string`
+
 * `$GIT_SHA_LEN`: _git sha1s will be truncated to this length_
     * reads env var `$GIT_SHA_LEN`
     * or default val: `8`
@@ -76,6 +80,24 @@ Prints sha of current commit - up to $GIT\_SHA\_LEN chars.
 
 Prints out the git-tag on the current commit (exact match only)
 Prints empty str if there is none.
+
+Defaults to latest tag created (based on ref taggerdate) on HEAD commit.
+
+Set GIT_SORT=semver to get the highest semver tag on HEAD.
+*Non semver tags are ignored.*
+
+Set GIT_SORT=taggerdate to get the most recently applied tag on HEAD.
+
+#### Example
+
+```bash
+# tags on HEAD applied in this order: zebra, aardvark, goose.
+git_tag # outputs 'goose'
+
+# tags on HEAD applied in this order: 1.3.0, 10.3.2, 0
+git_tag # outputs 'goose'
+```
+
 
 ---
 
@@ -156,7 +178,7 @@ echo "I am in a local clone of $GIT_REPO on branch $GIT_BRANCH"
 ---
 ### no\_unpushed\_changes()
 
-runs [check\_for\_changes](#check_for_changes) and 
+runs [check\_for\_changes](#check_for_changes) and
 [sha_in_origin](#sha_in_origin) for **current dir**.
 
 If $DEVMODE is set, the checks will be skipped.

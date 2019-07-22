@@ -169,7 +169,13 @@ std::trim_str() {
 std::render_tmpl() {
     local file_tmpl="${1:-$file_tmpl}"
     local allow_code="${2:-$allow_code}" # default is to not execute code on render.
-    required_vars "file_tmpl" || return 1
+
+    if ! check_var_defined "file_tmpl"
+    then
+        e "... expects either /path/to/file as arg or as env var \$file_tmpl"
+        return 1
+    fi
+
     [[ ! -r "$file_tmpl" ]] && e "$file_tmpl is not readable" && return 1
 
     local d="" delim="__render_tmpl__" cmd=""
@@ -264,7 +270,14 @@ str_to_safe_chars() {
     local p="${3:-$(safe_chars_def_list)}" # allowed chars (or with leading ! disallowed)
 
     [[ -z "$1" ]] && red_e "... you must pass a str to transform" && return 1
-    [[ "${#r}" -ne 1 ]] && red_e "... replacement must be one UTF-8 char, not '$r'" && return 1
+    if [[ "${#r}" -ne 1 ]]; then
+        msg="... replacement must be one UTF-8 char, not '$r'"
+        msg="$msg\nDid you set the correct locale? e.g. if str or replacement is utf8"
+        msg="$msg\nensure your locale is also utf8."
+        red_e "$msg"
+
+        return 1
+    fi
 
     local sed_class="[^$p]"
     # if user passed a list of disallowed chars
@@ -308,16 +321,27 @@ safe_chars_def_list() {
 #
 envsubst_tokens_list() {
     local tmpl_tokens="$1"
-    local list=""
+    local list="" invalid_tokens rc=0
     for token in $tmpl_tokens; do
-        token="\${$token}"
-        if [[ -z "$list" ]]; then
-            list="$token"
+        if [[ "$token" =~ ^[_a-zA-Z][_a-zA-Z0-9]*$ ]]; then
+            token="\${$token}"
+            if [[ -z "$list" ]]; then
+                list="$token"
+            else
+                list="$list $token"
+            fi
         else
-            list="$list $token"
+            invalid_tokens="$invalid_tokens $token"
+            rc=1
         fi
     done
-    echo "$list"
+
+    if [[ $rc -eq 0 ]]; then
+        echo "$list"
+    else
+        e "following tokens are invalid var names:$invalid_tokens"
+    fi
+    return $rc
 }
 
 # @desc creates random str of format <datetime>-<integer>-<integer>
@@ -346,39 +370,79 @@ random_str() {
 semver_a_ge_b() {
     local a="$1"
     local b="$2"
-    local va="${1##[vV]}" ; va="${va%%-*}" # strip leading v and any prerelease info etc
-    local vb="${2##[vV]}" ; vb="${vb%%-*}" # strip leading v and any prerelease info etc
 
-    local p='^[vV]?[0-9]+\.[0-9]+\.[0-9]+(-.+)?$'
+    local p='^[vV]?[0-9]+\.[0-9]+\.[0-9]+([-\+].+)?$'
     ! [[ "$a" =~ $p ]] && e "... expects 2 semver strs as params" && return 2
     ! [[ "$b" =~ $p ]] && e "... expects 2 semver strs as params" && return 2
+
+    local va="${1##[vV]}" ; va="${va%%[-+]*}" # strip v and prerelease / build metadata 
+    local vb="${2##[vV]}" ; vb="${vb%%[-+]*}" # strip v and prerelease / build metadata
 
     # prerelease versions have a lower precedence than normal
     # so if x.y.z are same for each, but one is a prerelease, it is less.
     # if x.y.z are same but both are prereleases, normal comparison.
     if [[ "$va" == "$vb" ]] && [[ "$a$b" =~ \- ]]; then
 
-        if [[ "$a" =~ \- ]] && [[ "$b" =~ \- ]]; then
-
-            # ... both are prerelease, just compare originals with out leading vVs
-            _semver_a_gt_b ${a##[vV]} ${b##[vV]}
+        if [[ "$a" =~ \- ]] && [[ "$b" =~ \- ]]; then # 'a' and 'b' are prereleases
+            _compare_semver_metadata "${a#*-}" "${b#*-}" # compare prerelease/build data
             return $?
-
         elif [[ "$a" =~ \- ]] ; then
-            return 1
+            return 1 # 'a' is the prerelease
         else
-            return 0
+            return 0 # 'b' is the prerelease
         fi
     fi
 
-    _semver_a_gt_b $va $vb
+    _semver_a_ge_b $va $vb
 
 }
 
-_semver_a_gt_b() {
+_semver_a_ge_b() {
     local a=$1
     local b=$2
-    [[ "$a" == "$b" ]] || [[ $(echo -e "$a\n$b" | sort -V | head -n 1) != "$a" ]]
+    [[ "$a" == "$b" ]] || [[ $(echo -e "$a\n$b" | sort -V | tail -n 1) == "$a" ]]
+}
+
+# _compare_semver_metadata only used when 'a' and 'b' are both prereleases
+_compare_semver_metadata() {
+    local a="$1"
+    local b="$2"
+    local rc=0 sort_opt=""
+
+    # See https://semver.org/#spec-item-11 for the precedence rules.
+
+    # Build metadata is ignored for precedence
+    a="${a%%+*}";  b="${b%%+*}"
+
+    # the one with more dot separators wins.
+    dots_a="${a//[^\.]}" ; dots_b="${b//[^\.]}"
+
+    # same number of dots. Now come the nasty semver rules
+    # ... compare each dot-separated part from left to right.
+    # If one has numbers only - no leading zeros, but the other alphas, alphas win.
+    # If both are alphas, normal ascii sort
+    # If both are numbers, numeric sort
+    a="${a}." ; b="${b}."
+    while [[ "$a" ]]; do
+        ax="${a%%.*}" ; bx="${b%%.*}"
+        if [[ "$ax" == "$bx" ]]; then
+            a="${a#*.}" ; b="${b#*.}" # remove compared bits from str
+            continue # move on to next part of metadata
+        fi
+
+        if [[ "${ax}X${bx}" =~ ^[1-9][0-9]*X[1-9][0-9]*$ ]]; then
+            sort_opt="-n" 
+        fi
+        if [[ $(echo -e "$ax\n$bx" | sort $sort_opt | head -n1) == "$ax" ]]; then
+            rc=1
+        fi
+        break
+    done
+
+    # if b still has subparts but a does not, then b wins.
+    [[ "${a}" =~ ^\.*$ ]] && [[ ${#b} -gt ${#a} ]] && rc=1
+
+    return $rc
 }
 
 # @desc Exports $BUILD_URL if available from a number of possible sources.
@@ -387,11 +451,12 @@ _semver_a_gt_b() {
 #
 # Returns 1 if BUILD_URL can not be determined.
 #
-# Use this to annotate your builds and deployments with governance metadata. e.g. the job run
-# should show you who built what when.
+# Use this to annotate your builds and deployments with governance metadata.
+# e.g. the job run should show you who built what when.
 #
-# [shippable](https://shippable.com), [circleci](https://circleci.com) and [jenkins](https://jenkins.io)
-# provide an equivalent var. This func just exports it with a standard name.
+# [shippable](https://shippable.com), [circleci](https://circleci.com) and
+# [jenkins](https://jenkins.io) provide an equivalent var.
+# This func just exports it with a standard name.
 #
 # TravisCI [does not](https://github.com/travis-ci/travis-ci/issues/8935), but it is
 # possible to construct it.
@@ -399,13 +464,18 @@ _semver_a_gt_b() {
 export_build_url() {
     if [[ ! -z "$CIRCLE_BUILD_URL" ]]; then
         BUILD_URL="$CIRCLE_BUILD_URL"
-    elif [[ "$TRAVIS" == "true" ]]; then
-        if required_vars "TRAVIS_REPO_SLUG TRAVIS_JOB_ID"
-        then
-            BUILD_URL="https://travis-ci.org/$TRAVIS_REPO_SLUG/jobs/$TRAVIS_JOB_ID"
-        fi
+    elif [[ ! -z "$TRAVIS_JOB_WEB_URL" ]]; then
+        BUILD_URL="$TRAVIS_JOB_WEB_URL"
+    elif [[ ! -z "$CI_BUILD_URL" ]]; then
+        BUILD_URL="$CI_BUILD_URL" # for codeship
     fi
-    [[ ! -z "$BUILD_URL" ]] && export BUILD_URL
+
+    [[ -z "$BUILD_URL" ]] && return 1
+
+    d "BUILD_URL:[$BUILD_URL]"
+
+    export BUILD_URL
+    return 0
 }
 
 #####################################################################
@@ -478,7 +548,6 @@ set_log_prefix() {
         echo $str
     fi
 }
-
 
 # @desc prints ERROR to STDERR, with context prefix and
 # stacktrace.

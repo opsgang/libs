@@ -347,11 +347,12 @@ $BUILD_URL is a link to a CI/CD job's run.
 
 Returns 1 if BUILD_URL can not be determined.
 
-Use this to annotate your builds and deployments with governance metadata. e.g. the job run
-should show you who built what when.
+Use this to annotate your builds and deployments with governance metadata.
+e.g. the job run should show you who built what when.
 
-[shippable](https://shippable.com), [circleci](https://circleci.com) and [jenkins](https://jenkins.io)
-provide an equivalent var. This func just exports it with a standard name.
+[shippable](https://shippable.com), [circleci](https://circleci.com) and
+[jenkins](https://jenkins.io) provide an equivalent var.
+This func just exports it with a standard name.
 
 TravisCI [does not](https://github.com/travis-ci/travis-ci/issues/8935), but it is
 possible to construct it.

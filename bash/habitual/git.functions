@@ -12,6 +12,10 @@
 # path to git binary
 GIT="${GIT:-git --no-pager}"
 
+
+# valid vals: semver | taggerdate. Empty string forces lexical sort.
+GIT_SORT="${GIT_SORT:-}"
+
 # git sha1s will be truncated to this length
 GIT_SHA_LEN=${GIT_SHA_LEN:-8}
 
@@ -48,8 +52,36 @@ git_sha() {
 
 # @desc Prints out the git-tag on the current commit (exact match only)
 # Prints empty str if there is none.
+#
+# Defaults to latest tag created (based on ref taggerdate) on HEAD commit.
+#
+# Set GIT_SORT=semver to get the highest semver tag on HEAD.
+# *Non semver tags are ignored.*
+#
+# Set GIT_SORT=taggerdate to get the most recently applied tag on HEAD.
+#
+# @example
+#   # tags on HEAD applied in this order: zebra, aardvark, goose.
+#   git_tag # outputs 'goose'
+#
+#   # tags on HEAD applied in this order: 1.3.0, 10.3.2, 0
+#   git_tag # outputs 'goose'
 git_tag() {
-    ${GIT} describe --exact-match --tags 2>/dev/null || echo ""
+    local tags=""
+    if [[ "$GIT_SORT" == 'semver' ]]; then
+        d "... using semver sorting for tags on HEAD commit. Ignoring non-semver tags."
+        ${GIT} -c versionsort.suffix=- -c versionsort.suffix=+ tag \
+            --points-at HEAD \
+            --sort=-version:refname \
+        2>/dev/null | grep -P '^\d+\.\d+\.\d+' | head -n 1 || echo ""
+    elif [[ "$GIT_SORT" == 'taggerdate' ]]; then
+        d "... using taggerdate to find latest tag on HEAD commit"
+        d "... this means annotated commits take precedence over lightweight ones"
+        ${GIT} tag --points-at HEAD --sort=-taggerdate 2>/dev/null | head -n 1
+    else
+        d "... using default lexical sort, or value of tag.sort git config"
+        ${GIT} tag --points-at HEAD --sort=-refname 2>/dev/null | head -n 1
+    fi
 }
 
 # @desc Prints user.name (from git config)
@@ -157,7 +189,7 @@ git_vars() {
 # @section VALIDATION FUNCTIONS
 ###############################################################
 
-# @desc runs [check\_for\_changes](#check_for_changes) and 
+# @desc runs [check\_for\_changes](#check_for_changes) and
 # [sha_in_origin](#sha_in_origin) for **current dir**.
 #
 # If $DEVMODE is set, the checks will be skipped.
@@ -198,8 +230,8 @@ check_for_changes() {
         __cd $d || exit 1
 
         ! in_git_clone && red_e "$(pwd) is not a git dir" && return 1;
-        git &>/dev/null --no-pager status # make sure index is up-to-date
-        if git diff-index --quiet HEAD --
+        $GIT status &>/dev/null # force git index to be up-to-date
+        if $GIT diff-index --quiet HEAD --
         then
             i "... none found."
         else
