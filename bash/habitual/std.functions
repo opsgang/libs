@@ -183,10 +183,13 @@ std::render_tmpl() {
     fi
 
     cmd="cat <<$delim"$'\n'"$d"$'\n'"$delim" # creates a heredoc
-    eval "$cmd"
 
     # ... check eval worked syntactically ...
-    [[ $? -ne 0 ]] && e "... failed to render file $file_tmpl" && return 1
+    if ! eval "$cmd"
+    then
+        e "... failed to render file $file_tmpl"
+        return 1
+    fi
 
     return 0
 }
