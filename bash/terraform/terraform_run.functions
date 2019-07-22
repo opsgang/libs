@@ -168,7 +168,7 @@ _disclaimer_keep_plugins() {
 
 _disclaimer_no_apply() {
     local v='NO_APPLY'
-    if [[ ! -z "${!v}" ]] ; then
+    if [[ -n "${!v}" ]] ; then
         yellow_i "================================================="
         yellow_i "= ACTIVATED: \$${v}"
         yellow_i "================================================="
