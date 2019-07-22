@@ -404,7 +404,7 @@ _semver_a_gt_b() {
 # possible to construct it.
 #
 export_build_url() {
-    if [[ ! -z "$CIRCLE_BUILD_URL" ]]; then
+    if [[ -n "$CIRCLE_BUILD_URL" ]]; then
         BUILD_URL="$CIRCLE_BUILD_URL"
     elif [[ "$TRAVIS" == "true" ]]; then
         if required_vars "TRAVIS_REPO_SLUG TRAVIS_JOB_ID"
@@ -412,7 +412,7 @@ export_build_url() {
             BUILD_URL="https://travis-ci.org/$TRAVIS_REPO_SLUG/jobs/$TRAVIS_JOB_ID"
         fi
     fi
-    [[ ! -z "$BUILD_URL" ]] && export BUILD_URL
+    [[ -n "$BUILD_URL" ]] && export BUILD_URL
 }
 
 #####################################################################
