@@ -616,10 +616,12 @@ yellow_i() {
 
 # @desc as with i(), but msg text is coloured.
 green_i() {
-    [[ ! -z "$QUIET" ]] && return 0
+    [[ -n "$QUIET" ]] && return 0
     local IFS=''
-    local pre="INFO $(set_log_prefix)"
-    while read line ; do
+    local pre
+    
+    pre="INFO $(set_log_prefix)"
+    while read -r line ; do
         echo -e "$pre: ${__TGREEN}$line${__TRESET}"
     done < <(echo -e "$*")
 }
