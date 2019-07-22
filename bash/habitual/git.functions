@@ -207,7 +207,7 @@ check_for_changes() {
     local d="${1:-$(pwd)}"
     i "... checking for uncommitted changes in $d"
     (
-        __cd $d || exit 1
+        __cd "$d" || exit 1
 
         ! in_git_clone && red_e "$(pwd) is not a git dir" && return 1;
         git &>/dev/null --no-pager status # make sure index is up-to-date
