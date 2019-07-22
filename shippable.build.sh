@@ -7,7 +7,7 @@ NVM_DIR=$CIUSER_HOME/.nvm
 
 install_tools() {
     sudo apt-get update
-    sudo apt-get install -y coreutils realpath
+    sudo apt-get install -y coreutils realpath shellcheck
     sort --help | grep -q -- '--version-sort' || return 1 # ...verify coreutils
     realpath $PWD >/dev/null || return 1                  # ... verify realpath
 }
