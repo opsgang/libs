@@ -466,6 +466,8 @@ set_log_prefix() {
         echo "${0#-}"
     else
         local src="" f="" func=""
+        # I don't think the one below is correct but suspect it's a bug
+        #shellcheck disable=SC2086
         if [[ "$(caller ${FROM_STACKFRAME:-1})" =~ $__CALLER_REGX ]]; then
             src="${BASH_REMATCH[3]}"
             func_i=$(( $(( ${FROM_STACKFRAME:-1} + 1 )) ))
