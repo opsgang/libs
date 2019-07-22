@@ -94,7 +94,7 @@ git_info_str() {
     local branch="" repo="" sha="" tag=""
 
     (
-        __cd $d || exit 1
+        __cd "$d" || exit 1
         ! in_git_clone && e "can't get git info for $(pwd) - not a git dir" && return 1
 
         repo="$(git_repo)"
