@@ -564,11 +564,13 @@ i() {
 # @example
 #   d "msg line 1" "line 2\nline3"
 d() {
-    [[ ! -z "$QUIET" ]] && return 0
+    [[ -n "$QUIET" ]] && return 0
     [[ -z "$DEBUG" ]] && return 0
     local IFS=''
-    local pre="DEBUG $(set_log_prefix)"
-    while read line ; do
+    local pre
+    
+    pre="DEBUG $(set_log_prefix)"
+    while read -r line ; do
         echo -e "$pre: ${__TDEBUG}$line${__TRESET}" >&2
     done < <(echo -e "$*")
 }
