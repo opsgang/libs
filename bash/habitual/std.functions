@@ -368,7 +368,7 @@ semver_a_ge_b() {
         if [[ "$a" =~ \- ]] && [[ "$b" =~ \- ]]; then
 
             # ... both are prerelease, just compare originals with out leading vVs
-            _semver_a_gt_b ${a##[vV]} ${b##[vV]}
+            _semver_a_gt_b "${a##[vV]}" "${b##[vV]}"
             return $?
 
         elif [[ "$a" =~ \- ]] ; then
@@ -378,7 +378,7 @@ semver_a_ge_b() {
         fi
     fi
 
-    _semver_a_gt_b $va $vb
+    _semver_a_gt_b "$va" "$vb"
 
 }
 
