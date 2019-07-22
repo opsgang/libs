@@ -511,12 +511,14 @@ set_log_prefix() {
 #
 e() {
     local IFS=''
-    local pre="ERROR $(set_log_prefix)"
-    while read line ; do
+    local pre
+    
+    pre="ERROR $(set_log_prefix)"
+    while read -r line ; do
         echo -e "$pre: $line" >&2
     done < <(echo -e "$*\n")
 
-    while read line; do
+    while read -r line; do
         echo -e "$pre: ${__TRED}$line${__TRESET}" >&2
     done < <(echo -e "TRACE:\n$(__stacktrace)")
 }
