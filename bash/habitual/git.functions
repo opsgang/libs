@@ -19,7 +19,7 @@ GIT_SHA_LEN=${GIT_SHA_LEN:-8}
 # __cd() - if user passed a path, cd to it.
 __cd() {
     local d="$1"
-    [[ ! -z "$d" ]] && ! cd $d 2>/dev/null && red_e "couldn't cd to $d" && return 1;
+    [[ -n "$d" ]] && ! cd "$d" 2>/dev/null && red_e "couldn't cd to $d" && return 1;
     return 0
 }
 
