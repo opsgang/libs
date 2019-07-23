@@ -663,7 +663,8 @@ __stacktrace() {
         && file="${BASH_REMATCH[3]}"
 
         tmpl="%$(( $(( frame - start_index )) * 2 ))s"
-        indent="$(printf $tmpl)"
+        #shellcheck disable=SC2059
+        indent="$(printf $tmpl ' ')"
 
         str_fmt="${indent}${func}() (file: $file, line: $ln)\n"
         str="$str$str_fmt"
