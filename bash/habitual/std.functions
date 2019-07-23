@@ -662,7 +662,7 @@ __stacktrace() {
         && func="${BASH_REMATCH[2]}" \
         && file="${BASH_REMATCH[3]}"
 
-        tmpl="%$(( $(( frame - $start_index )) * 2 ))s"
+        tmpl="%$(( $(( frame - start_index )) * 2 ))s"
         indent="$(printf $tmpl)"
 
         str_fmt="${indent}${func}() (file: $file, line: $ln)\n"
