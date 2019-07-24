@@ -268,7 +268,7 @@ str_to_safe_chars() {
     local s="$1" # str to transform
     local r="${2:-_}" # replacement char
     local p="${3:-$(safe_chars_def_list)}" # allowed chars (or with leading ! disallowed)
-    local sed_cmd=""
+    local sed_rc=""
 
     [[ -z "$1" ]] && red_e "... you must pass a str to transform" && return 1
     [[ "${#r}" -ne 1 ]] && red_e "... replacement must be one UTF-8 char, not '$r'" && return 1
@@ -282,12 +282,16 @@ str_to_safe_chars() {
     # GNU tr does not handle UTF8 correctly, so sed is used instead
     # ... user may pass '/' to $r which would mess with default sed delimiter.
     if [[ "$r" == '/' ]]; then
-        sed_cmd="echo '$s' | sed -e 's#$sed_class#$r#g'"
+        #shellcheck disable=SC2001
+        echo "$s" | sed -e "s#$sed_class#$r#g"
+        sed_rc="$?"
     else
-        sed_cmd="echo '$s' | sed -e 's/$sed_class/$r/g'"
+        #shellcheck disable=SC2001
+        echo "$s" | sed -e "s/$sed_class/$r/g"
+        sed_rc="$?"
     fi
 
-    if ! eval "$sed_cmd"; then
+    if [[ $sed_rc -ne 0 ]]; then
         e "... unable to make safe\nstr: $s\nreplacement char: $r\nchar list: $p\ncl:$sed_class"
         return 1
     fi
