@@ -95,7 +95,12 @@ git_info_str() {
 
     (
         __cd "$d" || exit 1
-        ! in_git_clone && e "can't get git info for $(pwd) - not a git dir" && return 1
+        # No need to call `cd` by sending $d in here for sure,
+        # but, shellcheck complains about SC2120 if you never 
+        # call the function with an argument. 
+        # It thinks you're confused about script's $1 and 
+        # functions $1. So, no harm in this
+        ! in_git_clone "$d" && e "can't get git info for $(pwd) - not a git dir" && return 1
 
         repo="$(git_repo)"
         sha="$(git_sha)"
