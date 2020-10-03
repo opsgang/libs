@@ -2,7 +2,7 @@
 #
 # Source this file in your script and all necessary libs
 # will also be consumed.
-# 
+#
 __OPSGANG_LIBS="
 "
 if [[ -z "$BASH_SOURCE" ]] || [[ "$BASH_SOURCE" == "$0" ]]; then
@@ -11,14 +11,14 @@ if [[ -z "$BASH_SOURCE" ]] || [[ "$BASH_SOURCE" == "$0" ]]; then
 fi
 RC=0
 __source() {
-    local file="" file_abs="" rc=0 
+    local file="" file_abs="" rc=0
     local this="$BASH_SOURCE"
     local libdir="$(cd "$(dirname "$this")"; pwd)"
 
     local libs="$__OPSGANG_LIBS"
     for file in $libs; do
         file_abs="$libdir/$file"
-        [[ ! -z $DEBUG ]] && echo "DEBUG $this: ... sourcing $file_abs" >&2
+        [[ ! -z ${DEBUG:-} ]] && echo "DEBUG $this: ... sourcing $file_abs" >&2
         ! . "$file_abs" && echo "ERROR $this: could not source $file_abs" >&2 && rc=1
     done
     return $rc
