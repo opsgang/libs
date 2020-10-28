@@ -25,6 +25,7 @@ run_bash_tests() {
     local rc=0
     for lib in $(find_libs_to_test); do
         run_bash_test_file "$lib" || rc=1
+        shellcheck "$lib" || rc=1
     done
     return $rc
 }

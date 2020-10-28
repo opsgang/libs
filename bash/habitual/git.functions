@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # vim: et sr sw=4 ts=4 smartindent syntax=sh:
 #
 # @overview
@@ -18,7 +19,7 @@ GIT_SHA_LEN=${GIT_SHA_LEN:-8}
 # __cd() - if user passed a path, cd to it.
 __cd() {
     local d="$1"
-    [[ ! -z "$d" ]] && ! cd $d 2>/dev/null && red_e "couldn't cd to $d" && return 1;
+    [[ -n "$d" ]] && ! cd "$d" 2>/dev/null && red_e "couldn't cd to $d" && return 1;
     return 0
 }
 
@@ -43,7 +44,7 @@ git_repo() {
 
 # @desc Prints sha of current commit - up to $GIT\_SHA\_LEN chars.
 git_sha() {
-    ${GIT} rev-parse --short=${GIT_SHA_LEN} --verify HEAD
+    ${GIT} rev-parse --short="$GIT_SHA_LEN" --verify HEAD
 }
 
 # @desc Prints out the git-tag on the current commit (exact match only)
@@ -67,10 +68,12 @@ git_email() {
 # @desc Prints user.name user.email (from git config)
 # Returns 1 if user.name not set.
 git_id() {
-    local u=$(git_user)
-    local e=$(git_email)
+    local u="" e=""
+    
+    u=$(git_user)
+    e=$(git_email)
     [[ -z "$u" ]] && echo "" && return 1
-    echo $u $e
+    echo "$u" "$e"
 }
 
 # @desc Outputs a str formed of repo, sha1, tag and branch info.
@@ -91,8 +94,13 @@ git_info_str() {
     local branch="" repo="" sha="" tag=""
 
     (
-        __cd $d || exit 1
-        ! in_git_clone && e "can't get git info for $(pwd) - not a git dir" && return 1
+        __cd "$d" || exit 1
+        # No need to call `cd` by sending $d in here for sure,
+        # but, shellcheck complains about SC2120 if you never 
+        # call the function with an argument. 
+        # It thinks you're confused about script's $1 and 
+        # functions $1. So, no harm in this
+        ! in_git_clone "$d" && e "can't get git info for $(pwd) - not a git dir" && return 1
 
         repo="$(git_repo)"
         sha="$(git_sha)"
@@ -143,13 +151,20 @@ git_vars() {
     ! in_git_clone && e "... $PWD is not inside a git repo" && return 1
 
     GIT_BRANCH="$(git_branch)" || return 1 ; export GIT_BRANCH
-    export GIT_TAG="$(git_tag)"
-    export GIT_REPO="$(git_repo)"
-    export GIT_SHA="$(git_sha)"
-    export GIT_USER="$(git_user)"
-    export GIT_EMAIL="$(git_email)"
-    export GIT_ID="$(git_id)" # git user and email, space separated
-    export GIT_INFO=$(_git_info_str "$GIT_REPO" "$GIT_SHA" "$GIT_TAG" "$GIT_BRANCH")
+    GIT_TAG="$(git_tag)"
+    export GIT_TAG
+    GIT_REPO="$(git_repo)"
+    export GIT_REPO
+    GIT_SHA="$(git_sha)"
+    export GIT_SHA
+    GIT_USER="$(git_user)"
+    export GIT_USER
+    GIT_EMAIL="$(git_email)"
+    export GIT_EMAIL
+    GIT_ID="$(git_id)" # git user and email, space separated
+    export GIT_ID
+    GIT_INFO=$(_git_info_str "$GIT_REPO" "$GIT_SHA" "$GIT_TAG" "$GIT_BRANCH")
+    export GIT_INFO
 
 }
 
@@ -170,10 +185,12 @@ git_vars() {
 #   DEVMODE=true no_unpushed_changes || exit 1
 #
 no_unpushed_changes() {
-    [[ ! -z "${DEVMODE}" ]] && yellow_i "DEVMODE - skipping git checks" && return 0;
+    [[ -n "${DEVMODE}" ]] && yellow_i "DEVMODE - skipping git checks" && return 0;
 
-    local d=$(pwd)
-    local sha=$(git_sha)
+    local d="" sha=""
+    
+    d=$(pwd)
+    sha=$(git_sha)
 
     check_for_changes "$d" || return 1
     sha_in_origin "$sha" || return 1
@@ -195,7 +212,7 @@ check_for_changes() {
     local d="${1:-$(pwd)}"
     i "... checking for uncommitted changes in $d"
     (
-        __cd $d || exit 1
+        __cd "$d" || exit 1
 
         ! in_git_clone && red_e "$(pwd) is not a git dir" && return 1;
         git &>/dev/null --no-pager status # make sure index is up-to-date
@@ -238,7 +255,8 @@ sha_in_origin() {
         return 1
     fi
 
-    b=$(git branch -r --contains ${sha} 2>/dev/null)
+    b=$(git branch -r --contains "$sha" 2>/dev/null)
+    #shellcheck disable=SC2181
     if [[ $? -ne 0 ]] || [[ -z "$b" ]]; then
         red_e "This commit ($sha) does not exist on origin."
         red_e "Did you push these changes?"
@@ -264,7 +282,7 @@ in_git_clone() {
     local rc=0
     local d="$1"
     (
-        __cd $d || exit 1
+        __cd "$d" || exit 1
         git --no-pager rev-parse --is-inside-work-tree >/dev/null 2>&1
     ) || rc=1
     return $rc

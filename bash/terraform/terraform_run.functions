@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # vim: et sr sw=4 ts=4 smartindent syntax=sh:
 #
 # @overview
@@ -127,8 +128,8 @@ tf() {
 #
 terraform_version() {
     [[ -z "$TERRAFORM" ]] && TERRAFORM=$(tf)
-    $TERRAFORM --version | grep -Po '(?<=Terraform v)[\d\.]+'
-    if [[ $? -ne 0 ]] ; then
+    
+    if ! $TERRAFORM --version | grep -Po '(?<=Terraform v)[\d\.]+' ; then
         red_e "... could not determine version: used $TERRAFORM --version"
         return 1
     fi
@@ -142,7 +143,7 @@ __special_modes() {
 
 _disclaimer_devmode() {
     local v='DEVMODE'
-    if [[ ! -z "${!v}" ]] ; then
+    if [[ -n "${!v}" ]] ; then
         yellow_i "================================================="
         yellow_i "= ACTIVATED: \$${v}"
         yellow_i "================================================="
@@ -155,7 +156,7 @@ _disclaimer_devmode() {
 
 _disclaimer_keep_plugins() {
     local v='KEEP_PLUGINS'
-    if [[ ! -z "${!v}" ]] ; then
+    if [[ -n "${!v}" ]] ; then
         yellow_i "================================================="
         yellow_i "= ACTIVATED: \$${v}"
         yellow_i "================================================="
@@ -167,7 +168,7 @@ _disclaimer_keep_plugins() {
 
 _disclaimer_no_apply() {
     local v='NO_APPLY'
-    if [[ ! -z "${!v}" ]] ; then
+    if [[ -n "${!v}" ]] ; then
         yellow_i "================================================="
         yellow_i "= ACTIVATED: \$${v}"
         yellow_i "================================================="
@@ -204,8 +205,9 @@ terraform_cleanup() {
 #
 terraform_init() {
     local init_opts="$TERRAFORM_INIT_OPTS" # init / remote config opts
-    local get_opts="$TERRAFORM_GET_OPTS"
-    local tv=$(terraform_version) ; [[ -z "$tv" ]] && e "version of terrform not found" && return 1
+    local tv
+    
+    tv=$(terraform_version) ; [[ -z "$tv" ]] && e "version of terrform not found" && return 1
 
     # ... for terraform 0.9.0+
     local init_cmd="init" get_cmd=""
@@ -219,12 +221,12 @@ terraform_init() {
         get_cmd="get" # need to get modules first.
     fi
 
-    if [[ ! -z "$DEVMODE" ]]; then
-        if [[ ! -z "$get_cmd" ]]; then
+    if [[ -n "$DEVMODE" ]]; then
+        if [[ -n "$get_cmd" ]]; then
             yellow_i "================================================="
             yellow_i "... will run '$get_cmd' to fetch any modules"
         fi
-        if [[ ! -z "$init_opts" ]]; then
+        if [[ -n "$init_opts" ]]; then
             yellow_i "================================================="
             yellow_i "= terraform $init_cmd opts:"
             yellow_i "================================================="
@@ -234,7 +236,7 @@ terraform_init() {
     fi
 
     # ... run terraform get if needed
-    [[ ! -z $get_cmd ]] && ! eval "$TERRAFORM get $TERRAFORM_GET_OPTS" && return 1
+    [[ -n $get_cmd ]] && ! eval "$TERRAFORM get $TERRAFORM_GET_OPTS" && return 1
     # ... now run init
     eval "$TERRAFORM $init_cmd $init_opts"
 }
@@ -273,7 +275,7 @@ __skip_on() {
     local rc=1
 
     for var_name in $flags; do
-        if [[ ! -z "${!var_name}" ]]; then
+        if [[ -n "${!var_name}" ]]; then
             d "... env var \$$var_name set."
             rc=0
         fi
@@ -364,7 +366,7 @@ __skip_on() {
 #       terraform_run "/my/tf/dir" || exit 1 # unless DEVMODE, will apply terraform and switch dns.
 #
 terraform_run() {
-    local wd="$1" tf=""
+    local wd="$1"
 
     __special_modes
 
@@ -376,7 +378,7 @@ terraform_run() {
     (
         if [[ "$wd" ]]; then
             i "... changing to working dir $wd"
-            ! cd $wd && red_e "... could not change to $wd" && exit 1
+            ! cd "$wd" && red_e "... could not change to $wd" && exit 1
         fi
 
         terraform_cleanup || exit 1
