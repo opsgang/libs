@@ -381,6 +381,76 @@ _semver_a_gt_b() {
     [[ "$a" == "$b" ]] || [[ $(echo -e "$a\n$b" | sort -V | head -n 1) != "$a" ]]
 }
 
+# @desc Concatenates a multiline string, converting newlines to \n
+#
+# STDOUT: concatenated line
+# *NOTE: the argument is double quoted if a variable, to preserve real newlines.*
+#
+# @example
+#   my_str="This is
+#   a multiline string"
+#   multiline_to_single "$my_str"
+#
+#   # ... would print something like:
+#   # This is\na multiline string
+#
+multiline_to_single() {
+    local lines="$1"
+    if [[ -z "$line" ]]; then
+        red_e 'pass lines to combine with slash n e.g. single_line=$(multiline_to_single "$lines")'
+        return 1
+    fi
+    sed ':a;N;s/\n/\\n/;ta' <(echo "$lines")
+}
+
+# @desc Splits a string on '\n' to multiple lines with real newlines.
+#
+# STDOUT: Multiple lines
+#
+# These are an alternative to the `base64_encode` and
+# `base64_decode` functions, for example, when base64 produces
+# too long a string. Try storing an ssh key in AWS parameter store
+# and see what I mean ...
+#
+# @example
+#   my_str="This will be\na multiline string"
+#   single_to_multiline "$my_str"
+#
+#   # ... would print something like:
+#   # This will be
+#   # a multiline string
+#
+single_to_multiline() {
+    local line="$1"
+    [[ -z "$line" ]] && red_e 'pass a line to split on slash-n' && return 1
+    echo "$line" | sed -e 's/\\n/\n/g'
+}
+
+# @desc Encodes a string (or mulitline string) as Base64
+#
+# You can use this and `base64_decode` when you need to pass
+# or store multiline strings as a single line.
+#
+# These are an alternative to the `single_to_multiline` and
+# `multiline_to_single` functions when you wish to preserve existing
+# '\n' instances in your strings, and not convert them to newlines
+# or vice-versa.
+#
+base64_encode() {
+    local str="$1"
+    echo "$str" | base64 -w0
+}
+
+# @desc Decodes a base64 string
+#
+# You can use this and `base64_decode` when you need to pass
+# or store multiline strings as a single line.
+#
+base64_decode() {
+    local str="$1"
+    echo "$str" | base64 -d
+}
+
 # @desc Exports $BUILD_URL if available from a number of possible sources.
 #
 # $BUILD_URL is a link to a CI/CD job's run.
